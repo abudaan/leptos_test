@@ -7,9 +7,9 @@ use uuid::Uuid;
 
 use crate::model::PgId;
 
-#[server(GetAllTexts, "/api/text", "GetJson")]
-pub async fn get_all_texts(amount: u32) -> Result<Vec<Text>, ServerFnError> {
-    let amount = i64::from(amount);
+// #[server(GetAllTexts, "/api", "GetJson", "text")]
+#[server]
+pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
     let db = expect_context::<PgPool>();
 
     Text::get_all(&db).await.map_err(|x| {
@@ -22,10 +22,10 @@ pub async fn get_all_texts(amount: u32) -> Result<Vec<Text>, ServerFnError> {
 #[new(derive(Deserialize, Clone))]
 pub struct Text {
     #[new(skip)]
-    id: Uuid,
-    title: String,
-    content: String,
-    published: bool,
+    pub id: Uuid,
+    pub title: String,
+    pub content: String,
+    pub published: bool,
 }
 
 #[cfg(feature = "ssr")]

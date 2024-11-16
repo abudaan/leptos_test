@@ -1,35 +1,25 @@
+use crate::component::text::TextTable;
 use crate::error_template::{AppError, ErrorTemplate};
 use crate::model::text::get_all_texts;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-// #[server(AllQuestions, "/api/question")]
-// pub async fn all_quesions() -> Result<(), ServerFnError> {
-//     let mut conn = db().await?;
-
-//     match sqlx::query("INSERT INTO todos (title, completed) VALUES ($1, false)")
-//         .bind(title)
-//         .execute(&mut conn)
-//         .await
-//     {
-//         Ok(_row) => Ok(()),
-//         Err(e) => Err(ServerFnError::ServerError(e.to_string())),
-//     }
-// }
-
 #[component]
 pub fn BusyButton() -> impl IntoView {
     view! {
-        <button on:click=move |_| {
-            spawn_local(async {
-                let r = get_all_texts(42).await;
-                logging::log!("all texts {:?}", r);
+        <div>
+            <A href="/text">"Here is a button"</A>
+            <button on:click=move |_| {
+                spawn_local(async {
+                    let r = get_all_texts().await;
+                    logging::log!("all texts {:?}", r);
 
-            });
-        }>
+                });
+            }>
             "Get questions"
-        </button>
+            </button>
+        </div>
     }
 }
 
@@ -39,8 +29,6 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-
-
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/diabetes-game-admin.css"/>
@@ -62,7 +50,7 @@ pub fn App() -> impl IntoView {
                     <Route path="" view=HomePage/>
                     // <Route path="test" view=Test />
                 </Routes>
-                <BusyButton />
+                <TextTable />
             </main>
         </Router>
     }
