@@ -1,5 +1,5 @@
 use crate::error_template::{AppError, ErrorTemplate};
-use crate::text::get_all_texts;
+use crate::model::text::get_all_texts;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
