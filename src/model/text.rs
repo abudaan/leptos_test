@@ -3,6 +3,8 @@ use macros::New;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use sqlx::{Error, PgPool};
+#[cfg(feature = "ssr")]
+use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 
 use crate::model::PgId;
@@ -12,13 +14,15 @@ use crate::model::PgId;
 pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
     let db = expect_context::<PgPool>();
 
+    sleep(Duration::from_millis(1000)).await;
+
     Text::get_all(&db).await.map_err(|x| {
         tracing::error!("problem while fetching home texts: {x:?}");
         ServerFnError::new("Problem while fetching home texts")
     })
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, New)]
+#[derive(Serialize, Deserialize, Debug, Clone, New, Default)]
 #[new(derive(Deserialize, Clone))]
 pub struct Text {
     #[new(skip)]
