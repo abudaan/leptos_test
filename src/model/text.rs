@@ -1,3 +1,4 @@
+use crate::database::AppState;
 use leptos::{expect_context, server, ServerFnError};
 use macros::New;
 use serde::{Deserialize, Serialize};
@@ -12,14 +13,18 @@ use crate::model::PgId;
 // #[server(GetAllTexts, "/api", "GetJson", "text")]
 #[server]
 pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
-    let db = expect_context::<PgPool>();
+    let state = expect_context::<AppState>();
 
     sleep(Duration::from_millis(1000)).await;
 
-    Text::get_all(&db).await.map_err(|x| {
-        tracing::error!("problem while fetching home texts: {x:?}");
-        ServerFnError::new("Problem while fetching home texts")
-    })
+    if let Some(db) = state.db {
+        Text::get_all(&db).await.map_err(|x| {
+            tracing::error!("problem while fetching home texts: {x:?}");
+            ServerFnError::new("Problem while fetching home texts")
+        })
+    } else {
+        Err(ServerFnError::new("Could not connect to db"))
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, New, Default)]

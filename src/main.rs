@@ -1,9 +1,12 @@
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
+    // let db = PgPool::connect("your_database_url").await.unwrap();
+    let app_state = get_app_state().await;
+
     use axum::Router;
-    use diabetes_game_admin::app::*;
     use diabetes_game_admin::fileserv::file_and_error_handler;
+    use diabetes_game_admin::{app::*, database::get_app_state};
     // use diabetes_game_admin::text;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
@@ -20,20 +23,13 @@ async fn main() {
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(App);
 
-    let db: sqlx::Pool<sqlx::Postgres> = PgPoolOptions::new()
-        .max_connections(10)
-        .idle_timeout(Duration::from_secs(2))
-        .connect("http://diabetes@localhost:5432/diabetes")
-        .await
-        .expect("can't connect to database");
-
     // build our application with a route
     let app = Router::new()
         // .leptos_routes(&leptos_options, routes, App)
         .leptos_routes_with_context(
             &leptos_options,
             routes,
-            move || provide_context(db.clone()),
+            move || provide_context(app_state.clone()),
             App,
         )
         .fallback(file_and_error_handler)
