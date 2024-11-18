@@ -1,5 +1,6 @@
+#[cfg(feature = "ssr")]
 use crate::database::AppState;
-use leptos::{expect_context, server, ServerFnError};
+use leptos::{expect_context, logging, server, ServerFnError};
 use macros::New;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
@@ -24,6 +25,7 @@ pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
         })
     } else {
         Err(ServerFnError::new("Could not connect to db"))
+        // Err(ServerFnError::new(state.error.unwrap()))
     }
 }
 
