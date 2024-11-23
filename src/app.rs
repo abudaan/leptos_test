@@ -1,37 +1,34 @@
-use crate::component::text::TextTable;
+use crate::component::text_table::TextTable;
+use crate::database::init_database2;
+#[cfg(feature = "ssr")]
+use crate::database::AppState;
 use crate::error_template::{AppError, ErrorTemplate};
-use crate::model::text::get_all_texts;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
 #[component]
-pub fn BusyButton() -> impl IntoView {
-    view! {
-        <div>
-            <A href="/text">"Here is a button"</A>
-            <button on:click=move |_| {
-                spawn_local(async {
-                    let r = get_all_texts().await;
-                    logging::log!("all texts {:?}", r);
-
-                });
-            }>
-            "Get questions"
-            </button>
-        </div>
-    }
-}
-
-#[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
+    // let state = expect_context::<AppState>();
+
+    let db_connected = create_resource(
+        || (),
+        |_| async move {
+            let r = init_database2().await;
+            match r {
+                Ok(_) => None,
+                Err(error) => Some(error),
+            }
+        },
+    );
 
     view! {
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/diabetes-game-admin.css"/>
+        // <Stylesheet id="leptos" href="/pkg/style/main.css"/>
 
         // sets the document title
         <Title text="Welcome to Leptos"/>
@@ -46,11 +43,24 @@ pub fn App() -> impl IntoView {
             .into_view()
         }>
             <main>
-                <Routes>
-                    <Route path="" view=HomePage/>
-                    // <Route path="test" view=Test />
-                </Routes>
-                <TextTable />
+            <Suspense fallback=move || view! { <p>"Connecting to database..."</p> }>
+            { move || {
+                db_connected.get().map(|data| match data {
+                    None => view! {
+                            <Routes>
+                                <Route path="" view=HomePage/>
+                                <Route path="texts" view=TextTable/>
+                            </Routes>
+                            }.into_view(),
+                            Some(error) => {
+                                logging::log!("E R R O R {}", &error);
+                                view! {
+                                    <div>{error.to_string()}</div>
+                                }.into_view()
+                            }
+                        });
+                    }}
+            </Suspense>
             </main>
         </Router>
     }
@@ -66,6 +76,7 @@ fn HomePage() -> impl IntoView {
     view! {
         <h1>"Welcome to Leptos!"</h1>
         <button on:click=on_click>"Click Me: " {count}</button>
+        <A href="/texts">"Show all texts"</A>
     }
 }
 

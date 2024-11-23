@@ -3,5 +3,8 @@
         "ssr", "hydrate"
     ],
     "rust-analyzer.assist.emitMustUse": true,
-    "rust-analyzer.check.command": "clippy"
+    "rust-analyzer.check.command": "clippy",
+    "cSpell.enabledFileTypes": {
+        "rust": false
+    }
 }

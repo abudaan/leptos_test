@@ -13,7 +13,7 @@ pub fn TextTable() -> impl IntoView {
     );
     view! {
       <Suspense
-        fallback=move || view! { <p>"Loading texts... (suspense)"</p> }
+        fallback=move || view! { <p>"Loading texts..."</p> }
       >
         <h2>"Data"</h2>
 

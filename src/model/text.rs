@@ -1,12 +1,8 @@
-#[cfg(feature = "ssr")]
-use crate::database::AppState;
-use leptos::{expect_context, logging, server, ServerFnError};
+use leptos::{expect_context, server, ServerFnError};
 use macros::New;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use sqlx::{Error, PgPool};
-#[cfg(feature = "ssr")]
-use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 
 use crate::model::PgId;
@@ -14,6 +10,9 @@ use crate::model::PgId;
 // #[server(GetAllTexts, "/api", "GetJson", "text")]
 #[server]
 pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
+    use crate::database::AppState;
+    use tokio::time::{sleep, Duration};
+
     let state = expect_context::<AppState>();
 
     sleep(Duration::from_millis(1000)).await;
