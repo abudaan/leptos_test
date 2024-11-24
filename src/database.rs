@@ -1,4 +1,4 @@
-use leptos::{expect_context, server, ServerFnError};
+use leptos::{expect_context, logging, server, ServerFnError};
 #[cfg(feature = "ssr")]
 use sqlx::{Error, PgPool};
 
@@ -74,10 +74,15 @@ pub async fn init_database2() -> Result<bool, ServerFnError> {
 
     match result {
         Ok(value) => {
+            // logging::log!("database {:?}", value.clone());
             state.db = Some(value);
+            // logging::log!("AppState.db {:?}", state.db.clone());
             Ok(true)
         }
-        Err(error) => Err(ServerFnError::ServerError(error.to_string())),
+        Err(error) => {
+            logging::log!("error {:?}", error);
+            Err(ServerFnError::ServerError(error.to_string()))
+        }
     }
 }
 

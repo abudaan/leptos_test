@@ -13,16 +13,16 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
     // let state = expect_context::<AppState>();
 
-    // let db_connected = create_resource(
-    //     || (),
-    //     |_| async move {
-    //         let r = init_database2().await;
-    //         match r {
-    //             Ok(_) => None,
-    //             Err(error) => Some(error),
-    //         }
-    //     },
-    // );
+    let db_connected = create_resource(
+        || (),
+        |_| async move {
+            let r = init_database2().await;
+            match r {
+                Ok(_) => None,
+                Err(error) => Some(error),
+            }
+        },
+    );
 
     view! {
         // injects a stylesheet into the document <head>
@@ -43,24 +43,16 @@ pub fn App() -> impl IntoView {
             .into_view()
         }>
             <main>
-            // <Suspense fallback=move || view! { <p>"Connecting to database..."</p> }>
-            // { move || {
-            //     db_connected.get().map(|data| match data {
-            //         None => view! {
-            //                 <Routes>
-            //                     <Route path="" view=HomePage/>
-            //                     <Route path="texts" view=TextTable/>
-            //                 </Routes>
-            //                 }.into_view(),
-            //                 Some(error) => {
-            //                     logging::log!("E R R O R {}", &error);
-            //                     view! {
-            //                         <div>{error.to_string()}</div>
-            //                     }.into_view()
-            //                 }
-            //             });
-            //         }}
-            // </Suspense>
+            <Suspense fallback=move || view! { <p>"Connecting to database..."</p> }>
+            { move || {
+                db_connected.get().map(|v| match v {
+                    None => view!{}.into_view(),
+                    Some(error) => view!{<div>{error.to_string()}</div>}.into_view()
+                })
+            }
+
+            }
+            </Suspense>
             <Routes>
                 <Route path="" view=HomePage/>
                 <Route path="texts" view=TextTable/>
