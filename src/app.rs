@@ -1,7 +1,6 @@
 use crate::component::text_table::TextTable;
-use crate::database::init_database2;
-#[cfg(feature = "ssr")]
-use crate::database::AppState;
+// use crate::database::init_database2;
+use crate::database::{init_database, AppState};
 use crate::error_template::{AppError, ErrorTemplate};
 use leptos::*;
 use leptos_meta::*;
@@ -11,12 +10,11 @@ use leptos_router::*;
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
-    // let state = expect_context::<AppState>();
 
     let db_connected = create_resource(
         || (),
         |_| async move {
-            let r = init_database2().await;
+            let r = init_database().await;
             match r {
                 Ok(_) => None,
                 Err(error) => Some(error),
@@ -43,20 +41,24 @@ pub fn App() -> impl IntoView {
             .into_view()
         }>
             <main>
-            <Suspense fallback=move || view! { <p>"Connecting to database..."</p> }>
+            <Suspense fallback=move || view! { <p>"Connecting to database (app)..."</p> }>
             { move || {
                 db_connected.get().map(|v| match v {
-                    None => view!{}.into_view(),
+                    None => view!{
+                        <Routes>
+                        <Route path="" view=TextTable/>
+                        </Routes>
+                        // <TextTable/>
+                    }.into_view(),
                     Some(error) => view!{<div>{error.to_string()}</div>}.into_view()
                 })
-            }
-
-            }
+            }}
             </Suspense>
-            <Routes>
-                <Route path="" view=HomePage/>
-                <Route path="texts" view=TextTable/>
-            </Routes>
+            // <Routes>
+            //     // <Route path="" view=HomePage/>
+            //     // <Route path="texts" view=TextTable/>
+            //     <Route path="" view=TextTable/>
+            // </Routes>
             </main>
         </Router>
     }
@@ -68,6 +70,12 @@ fn HomePage() -> impl IntoView {
     // Creates a reactive value to update the button
     let (count, set_count) = create_signal(0);
     let on_click = move |_| set_count.update(|count| *count += 1);
+
+    if let Some(state) = use_context::<AppState>() {
+        logging::log!("has context {}", state.db_connected.get());
+    } else {
+        logging::log!("no context");
+    }
 
     view! {
         <h1>"Welcome to Leptos!"</h1>

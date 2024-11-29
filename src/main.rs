@@ -14,8 +14,8 @@ async fn main() {
     // use diabetes_game_admin::text;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
-    use sqlx::postgres::PgPoolOptions;
-    use std::time::Duration;
+    // use sqlx::postgres::PgPoolOptions;
+    // use std::{sync::Arc, time::Duration};
 
     // let pool = PgPoolOptions::new()
     //     .max_connections(10)
@@ -33,22 +33,25 @@ async fn main() {
     let leptos_options = conf.leptos_options;
     // logging::log!("where do I run??? {:?} ", leptos_options);
     let addr = leptos_options.site_addr;
-    let routes = generate_route_list(App);
+    // let routes = generate_route_list(App);
+
+    // let result = PgPoolOptions::new()
+    //     .max_connections(10)
+    //     .idle_timeout(Duration::from_secs(2))
+    //     .connect("http://diabetes@localhost:5432/diabetes")
+    //     .await
+    //     .unwrap();
+
+    // let state = AppState {
+    //     db: Some(result),
+    //     db_error: None,
+    // };
+    let context = move || provide_context(AppState::new());
 
     // build our application with a route
     let app = Router::new()
         // .leptos_routes(&leptos_options, routes, App)
-        .leptos_routes_with_context(
-            &leptos_options,
-            routes,
-            move || {
-                provide_context(AppState {
-                    db: None,
-                    error: None,
-                })
-            },
-            App,
-        )
+        .leptos_routes_with_context(&leptos_options, generate_route_list(App), context, App)
         .fallback(file_and_error_handler)
         .with_state(leptos_options);
 
