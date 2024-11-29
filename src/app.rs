@@ -11,16 +11,7 @@ pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
-    let db_connected = create_resource(
-        || (),
-        |_| async move {
-            let r = init_database().await;
-            match r {
-                Ok(_) => None,
-                Err(error) => Some(error),
-            }
-        },
-    );
+    // create_resource(|| (), |_| async move { init_database().await });
 
     view! {
         // injects a stylesheet into the document <head>
@@ -41,24 +32,11 @@ pub fn App() -> impl IntoView {
             .into_view()
         }>
             <main>
-            <Suspense fallback=move || view! { <p>"Connecting to database (app)..."</p> }>
-            { move || {
-                db_connected.get().map(|v| match v {
-                    None => view!{
-                        <Routes>
-                        <Route path="" view=TextTable/>
-                        </Routes>
-                        // <TextTable/>
-                    }.into_view(),
-                    Some(error) => view!{<div>{error.to_string()}</div>}.into_view()
-                })
-            }}
-            </Suspense>
-            // <Routes>
-            //     // <Route path="" view=HomePage/>
-            //     // <Route path="texts" view=TextTable/>
-            //     <Route path="" view=TextTable/>
-            // </Routes>
+            <Routes>
+                // <Route path="" view=HomePage/>
+                // <Route path="texts" view=TextTable/>
+                <Route path="" view=TextTable/>
+            </Routes>
             </main>
         </Router>
     }
@@ -72,7 +50,7 @@ fn HomePage() -> impl IntoView {
     let on_click = move |_| set_count.update(|count| *count += 1);
 
     if let Some(state) = use_context::<AppState>() {
-        logging::log!("has context {}", state.db_connected.get());
+        logging::log!("has context {}", state.db_connected);
     } else {
         logging::log!("no context");
     }

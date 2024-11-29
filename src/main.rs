@@ -1,4 +1,3 @@
-#[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
     // let db = PgPool::connect("your_database_url").await.unwrap();
@@ -14,8 +13,8 @@ async fn main() {
     // use diabetes_game_admin::text;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
-    // use sqlx::postgres::PgPoolOptions;
-    // use std::{sync::Arc, time::Duration};
+    use sqlx::{migrate, postgres::PgPoolOptions};
+    use std::{sync::Arc, time::Duration};
 
     // let pool = PgPoolOptions::new()
     //     .max_connections(10)
@@ -35,18 +34,21 @@ async fn main() {
     let addr = leptos_options.site_addr;
     // let routes = generate_route_list(App);
 
-    // let result = PgPoolOptions::new()
-    //     .max_connections(10)
-    //     .idle_timeout(Duration::from_secs(2))
-    //     .connect("http://diabetes@localhost:5432/diabetes")
-    //     .await
-    //     .unwrap();
+    let pool = PgPoolOptions::new()
+        .max_connections(10)
+        .idle_timeout(Duration::from_secs(2))
+        .connect("http://diabetes@localhost:5432/diabetes")
+        .await
+        .expect("Could not connect to database");
 
-    // let state = AppState {
-    //     db: Some(result),
-    //     db_error: None,
-    // };
-    let context = move || provide_context(AppState::new());
+    // migrate!()
+    //     .run(&pool)
+    //     .await
+    //     .expect("could not run SQLx migrations");
+
+    let mut state = AppState::new();
+    state.pool = Some(pool);
+    let context = move || provide_context(state.clone());
 
     // build our application with a route
     let app = Router::new()

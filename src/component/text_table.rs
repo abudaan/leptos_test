@@ -15,21 +15,21 @@ use leptos::*;
 //     }
 // }
 
-#[server]
-pub async fn change_state() -> Result<(), ServerFnError> {
-    use std::time::Duration;
-    use tokio::time::sleep;
-    if let Some(state) = use_context::<AppState>() {
-        logging::log!("change_state 1 {:?}", state.db);
-        sleep(Duration::from_millis(2000)).await;
-        state.db_connected.set(false);
-        logging::log!("change_state 2 {}", state.db_connected.get());
-        Ok(())
-    } else {
-        logging::log!("No context??");
-        Err(ServerFnError::ServerError("no context".to_string()))
-    }
-}
+// #[server]
+// pub async fn change_state() -> Result<(), ServerFnError> {
+//     use std::time::Duration;
+//     use tokio::time::sleep;
+//     if let Some(state) = use_context::<AppState>() {
+//         logging::log!("change_state 1 {:?}", state.pool);
+//         sleep(Duration::from_millis(2000)).await;
+//         state.db_connected.set(false);
+//         logging::log!("change_state 2 {}", state.db_connected.get());
+//         Ok(())
+//     } else {
+//         logging::log!("No context??");
+//         Err(ServerFnError::ServerError("no context".to_string()))
+//     }
+// }
 
 #[component]
 pub fn TextTable() -> impl IntoView {
@@ -38,16 +38,19 @@ pub fn TextTable() -> impl IntoView {
     // let state = expect_context::<AppState>();
     // view! { <div> "database connected:" {state.db_connected.get()}</div>}.into_view()
 
-    if let Some(state) = use_context::<AppState>() {
-        let check = create_resource(|| (), |_| async move { change_state().await });
-        // check.get();
-        log!("database {}", state.db_connected.get());
-        view! { <div> "database connected:" {state.db_connected.get()}</div>}.into_view()
-    } else {
-        // let state = expect_context::AppState();
-        // view! {<div>"Context: " {state.db_error.get()}</div>}
-        view! {<div>"No context"</div>}.into_view()
-    }
+    // if let Some(state) = use_context::<AppState>() {
+    //     // let check = create_resource(|| (), |_| async move { change_state().await });
+    //     let texts = create_resource(|| (), |_| async move { get_all_texts().await });
+    //     // check.get();
+    //     log!("database {}", state.db_connected.get());
+    //     view! { <div> "database connected:" {state.db_connected.get()}</div>}.into_view()
+    // } else {
+    //     // let state = expect_context::AppState();
+    //     // view! {<div>"Context: " {state.db_error.get()}</div>}
+    //     view! {<div>"No context"</div>}.into_view()
+    // }
+    let texts = create_resource(|| (), |_| async move { get_all_texts().await });
+    // view! {<div>"No context"</div>}.into_view()
 
     // if let Some(state) = use_context::<AppState>() {
     //     let (data, _) = create_signal(move |state: AppState| state.db_error);
@@ -63,18 +66,18 @@ pub fn TextTable() -> impl IntoView {
 
     // let texts = create_resource(|| (), |_| async move { get_all_texts().await });
 
-    // view! {
-    //     <Suspense fallback={move || {
-    //         view!{<div>"Loading"</div>}
-    //     }}>
-    //     {
-    //         check.get().map(|data| match data {
-    //             Ok(value) => view!{<div>"Context"</div>},
-    //             Err(error) => view!{<div>{error.to_string()}</div>}
-    //         })
-    //     }
-    //     </Suspense>
-    // }
+    view! {
+        <Suspense fallback={move || {
+            view!{<div>"Loading"</div>}
+        }}>
+        {
+            texts.get().map(|data| match data {
+                Ok(value) => view!{<div>"Context" {value.len()}</div>},
+                Err(error) => view!{<div>{error.to_string()}</div>}
+            })
+        }
+        </Suspense>
+    }
 
     // view! {
     //     <div>"hallo"</div>

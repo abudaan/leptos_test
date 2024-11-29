@@ -15,19 +15,21 @@ use sqlx::{Error, PgPool};
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db_error: RwSignal<Option<String>>,
-    pub db_connected: RwSignal<bool>,
+    pub db_error: Option<String>,
+    pub db_connected: bool,
     #[cfg(feature = "ssr")]
-    pub db: Option<PgPool>,
+    pub pool: Option<PgPool>,
 }
 
 impl AppState {
     pub fn new() -> Self {
         Self {
-            db_error: create_rw_signal(Some("No error".to_string())),
-            db_connected: create_rw_signal(false),
+            db_error: None,
+            db_connected: false,
+            // db_error: create_rw_signal(Some("No error".to_string())),
+            // db_connected: create_rw_signal(false),
             #[cfg(feature = "ssr")]
-            db: None,
+            pool: None,
         }
     }
 }
@@ -91,11 +93,10 @@ pub async fn init_database() -> Result<PgPool, Error> {
 #[server]
 pub async fn init_database() -> Result<bool, ServerFnError> {
     if let Some(mut state) = use_context::<AppState>() {
-        if state.db.is_some() {
+        if state.pool.is_some() {
+            logging::log!("database exists {:?}", state.pool);
             Ok(true)
         } else {
-            // logging::log!("database 1 {:?}", state.db);
-
             use sqlx::postgres::PgPoolOptions;
             use std::time::Duration;
             use tokio::time::sleep;
@@ -109,12 +110,15 @@ pub async fn init_database() -> Result<bool, ServerFnError> {
 
             match result {
                 Ok(value) => {
-                    state.db = Some(value);
-                    state.db_connected.set(true);
+                    state.pool = Some(value);
+                    // state.db_connected.set(true);
+                    state.db_connected = true;
+                    // logging::log!("database connected {:?}", state.db);
                     Ok(true)
                 }
                 Err(error) => {
-                    state.db_error.set(Some(error.to_string()));
+                    // state.db_error.set(Some(error.to_string()));
+                    state.db_error = Some(error.to_string());
                     logging::log!("error {:?}", error);
                     Err(ServerFnError::ServerError(error.to_string()))
                 }
@@ -130,10 +134,10 @@ pub async fn init_database() -> Result<bool, ServerFnError> {
 #[server]
 pub async fn database_connected() -> Result<bool, ServerFnError> {
     if let Some(state) = use_context::<AppState>() {
-        if state.db.is_none() {
+        if state.pool.is_none() {
             init_database().await
         } else {
-            Ok(state.db.is_none())
+            Ok(state.pool.is_none())
         }
     } else {
         Err(ServerFnError::ServerError(

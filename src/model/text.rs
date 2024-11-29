@@ -1,8 +1,11 @@
+use crate::database::{init_database, AppState};
 use leptos::{expect_context, logging, server, use_context, ServerFnError, SignalGet};
 use macros::New;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use sqlx::{Error, PgPool};
+#[cfg(feature = "ssr")]
+use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 
 use crate::model::PgId;
@@ -10,34 +13,34 @@ use crate::model::PgId;
 // #[server(GetAllTexts, "/api", "GetJson", "text")]
 #[server]
 pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
-    use crate::database::AppState;
-    use tokio::time::{sleep, Duration};
-
-    let state = use_context::<AppState>().expect("Failed to get shared data");
-    // Use shared_data on the server
-    Ok(Vec::new())
+    // let state = use_context::<AppState>().expect("Failed to get shared data");
+    // // Use shared_data on the server
+    // Ok(Vec::new())
 
     // let state = expect_context::<AppState>();
     // logging::log!("get_all_texts state.db {:?}", state.db.get());
 
-    // if let Some(state) = use_context::<AppState>() {
-    //     sleep(Duration::from_millis(1000)).await;
+    if let Some(state) = use_context::<AppState>() {
+        // sleep(Duration::from_millis(1000)).await;
 
-    //     if let Some(db) = state.db.get() {
-    //         Text::get_all(&db).await.map_err(|x| {
-    //             tracing::error!("problem while fetching home texts: {x:?}");
-    //             ServerFnError::new(format!("Problem while fetching home texts: {}", x))
-    //         })
-    //     } else {
-    //         Err(ServerFnError::new(format!(
-    //             "No database connection: {}",
-    //             state.db_error.get().unwrap_or_default()
-    //         )))
-    //     }
-    // } else {
-    //     tracing::error!("No context state available...");
-    //     Err(ServerFnError::new(format!("No context state available")))
-    // }
+        init_database().await?;
+
+        if let Some(db) = state.pool {
+            Text::get_all(&db).await.map_err(|x| {
+                tracing::error!("problem while fetching home texts: {x:?}");
+                ServerFnError::new(format!("Problem while fetching home texts: {}", x))
+            })
+        } else {
+            Err(ServerFnError::new(format!(
+                "No database connection: {}",
+                // state.db_error.get().unwrap_or_default()
+                state.db_error.unwrap_or_default()
+            )))
+        }
+    } else {
+        tracing::error!("No context state available...");
+        Err(ServerFnError::new("No context state available"))
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, New, Default)]
