@@ -2,6 +2,7 @@ use leptos::{
     create_rw_signal, expect_context, logging, server, use_context, RwSignal, ServerFnError,
 };
 use leptos::{SignalGet, SignalSet};
+use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use sqlx::{Error, PgPool};
 
@@ -89,35 +90,40 @@ pub async fn init_database() -> Result<PgPool, Error> {
 */
 #[server]
 pub async fn init_database() -> Result<bool, ServerFnError> {
-    let mut state = expect_context::<AppState>();
-    if state.db.is_some() {
-        Ok(true)
-    } else {
-        // logging::log!("database 1 {:?}", state.db);
+    if let Some(mut state) = use_context::<AppState>() {
+        if state.db.is_some() {
+            Ok(true)
+        } else {
+            // logging::log!("database 1 {:?}", state.db);
 
-        use sqlx::postgres::PgPoolOptions;
-        use std::time::Duration;
-        use tokio::time::sleep;
-        sleep(Duration::from_millis(2000)).await;
+            use sqlx::postgres::PgPoolOptions;
+            use std::time::Duration;
+            use tokio::time::sleep;
+            sleep(Duration::from_millis(2000)).await;
 
-        let result = PgPoolOptions::new()
-            .max_connections(10)
-            .idle_timeout(Duration::from_secs(2))
-            .connect("http://diabetes@localhost:5432/diabetes")
-            .await;
+            let result = PgPoolOptions::new()
+                .max_connections(10)
+                .idle_timeout(Duration::from_secs(2))
+                .connect("http://diabetes@localhost:5432/diabetes")
+                .await;
 
-        match result {
-            Ok(value) => {
-                state.db = Some(value);
-                state.db_connected.set(true);
-                Ok(true)
-            }
-            Err(error) => {
-                state.db_error.set(Some(error.to_string()));
-                logging::log!("error {:?}", error);
-                Err(ServerFnError::ServerError(error.to_string()))
+            match result {
+                Ok(value) => {
+                    state.db = Some(value);
+                    state.db_connected.set(true);
+                    Ok(true)
+                }
+                Err(error) => {
+                    state.db_error.set(Some(error.to_string()));
+                    logging::log!("error {:?}", error);
+                    Err(ServerFnError::ServerError(error.to_string()))
+                }
             }
         }
+    } else {
+        Err(ServerFnError::ServerError(
+            "No context, no AppState, no nothing".to_owned(),
+        ))
     }
 }
 
