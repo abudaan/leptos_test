@@ -31,13 +31,29 @@ pub fn App() -> impl IntoView {
             }
             .into_view()
         }>
-            <main>
-            <Routes>
-                // <Route path="" view=HomePage/>
-                // <Route path="texts" view=TextTable/>
-                <Route path="" view=TextTable/>
-            </Routes>
-            </main>
+        <main>
+        {
+            if let Some(state) = use_context::<AppState>()  {
+                if state.db_connected {
+                    view!{<Routes>
+                        // <Route path="" view=HomePage/>
+                        // <Route path="texts" view=TextTable/>
+                        <Route path="" view=TextTable/>
+                    </Routes>}.into_view()
+                } else {
+                    view!{<div>"NO DATABASE " {state.db_error.unwrap_or_default()}</div>}.into_view()
+                }
+            } else {
+                view!{<div>"ERROR"</div>}.into_view()
+            }
+        }
+                    // <Routes>
+                    //     // <Route path="" view=HomePage/>
+                    //     // <Route path="texts" view=TextTable/>
+                    //     <Route path="" view=TextTable/>
+                    // </Routes>
+
+        </main>
         </Router>
     }
 }

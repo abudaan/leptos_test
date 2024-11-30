@@ -38,16 +38,24 @@ async fn main() {
         .max_connections(10)
         .idle_timeout(Duration::from_secs(2))
         .connect("http://diabetes@localhost:5432/diabetes")
-        .await
-        .expect("Could not connect to database");
+        .await;
+
+    let mut state = AppState::new();
+    match pool {
+        Ok(p) => {
+            state.pool = Some(p);
+            state.db_connected = true;
+        }
+        Err(error) => {
+            state.db_error = Some(error.to_string());
+        }
+    }
 
     // migrate!()
     //     .run(&pool)
     //     .await
     //     .expect("could not run SQLx migrations");
 
-    let mut state = AppState::new();
-    state.pool = Some(pool);
     let context = move || provide_context(state.clone());
 
     // build our application with a route

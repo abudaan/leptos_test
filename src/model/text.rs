@@ -23,7 +23,7 @@ pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
     if let Some(state) = use_context::<AppState>() {
         // sleep(Duration::from_millis(1000)).await;
 
-        init_database().await?;
+        // init_database().await?;
 
         if let Some(db) = state.pool {
             Text::get_all(&db).await.map_err(|x| {
@@ -38,8 +38,8 @@ pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
             )))
         }
     } else {
-        tracing::error!("No context state available...");
-        Err(ServerFnError::new("No context state available"))
+        tracing::error!("No context available...");
+        Err(ServerFnError::new("No context available"))
     }
 }
 
