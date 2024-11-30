@@ -1,13 +1,13 @@
-use crate::component::text_table::TextTable;
-// use crate::database::init_database2;
-use crate::database::{init_database, AppState};
-use crate::error_template::{AppError, ErrorTemplate};
 use leptos::*;
-use leptos_meta::*;
-use leptos_router::*;
+use leptos_router::A;
 
+use crate::{component::text_form::TextForm, database::AppState};
 #[component]
 pub fn App() -> impl IntoView {
+    use crate::component::text_table::TextTable;
+    use crate::error_template::{AppError, ErrorTemplate};
+    use leptos_meta::*;
+    use leptos_router::*;
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
@@ -17,10 +17,13 @@ pub fn App() -> impl IntoView {
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/diabetes-game-admin.css"/>
-        // <Stylesheet id="leptos" href="/pkg/style/main.css"/>
+        <Stylesheet id="bootstrap" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+        <Stylesheet id="bootstrap-icons" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+        <Script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"/>
 
         // sets the document title
-        <Title text="Welcome to Leptos"/>
+        <Title text="Leptos Admin"/>
 
         // content for this welcome page
         <Router fallback=|| {
@@ -53,6 +56,7 @@ pub fn App() -> impl IntoView {
         <Routes>
             <Route path="" view=HomePage/>
             <Route path="texts" view=TextTable/>
+            <Route path="text-form" view=TextForm/>
         </Routes>
 
         </main>
@@ -64,18 +68,13 @@ pub fn App() -> impl IntoView {
 #[component]
 fn HomePage() -> impl IntoView {
     if let Some(state) = use_context::<AppState>() {
-        logging::log!("has context {}", state.db_connected);
+        logging::log!("Homepage has context {}", state.db_connected);
     } else {
-        logging::log!("no context");
+        logging::log!("Homepage has no context");
     }
 
-    // Creates a reactive value to update the button
-    let (count, set_count) = create_signal(0);
-    let on_click = move |_| set_count.update(|count| *count += 1);
-
     view! {
-        <h1>"Welcome to Leptos!"</h1>
-        <button on:click=on_click>"Click Me: " {count}</button>
+        <h1>"Admin"</h1>
         <A href="/texts">"Show all texts"</A>
     }
 }

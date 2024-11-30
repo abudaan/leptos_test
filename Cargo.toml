@@ -51,6 +51,13 @@ ssr = [
     "dep:sqlx"
 ]
 
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  "HtmlInputElement",
+  "InputEvent"
+]
+
 # Defines a size-optimized profile for the WASM bundle in release mode
 [profile.wasm-release]
 inherits = "release"
