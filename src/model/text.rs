@@ -39,7 +39,7 @@ pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
         }
     } else {
         tracing::error!("No context available...");
-        Err(ServerFnError::new("No context available"))
+        Err(ServerFnError::new("no context available"))
     }
 }
 

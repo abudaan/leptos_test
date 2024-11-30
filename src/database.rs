@@ -125,9 +125,7 @@ pub async fn init_database() -> Result<bool, ServerFnError> {
             }
         }
     } else {
-        Err(ServerFnError::ServerError(
-            "No context, no AppState, no nothing".to_owned(),
-        ))
+        Err(ServerFnError::ServerError("no context".to_owned()))
     }
 }
 

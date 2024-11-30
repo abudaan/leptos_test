@@ -56,6 +56,7 @@ async fn main() {
     //     .await
     //     .expect("could not run SQLx migrations");
 
+    // let state = AppState::new();
     let context = move || provide_context(state.clone());
 
     // build our application with a route

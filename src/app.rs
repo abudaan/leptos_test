@@ -11,7 +11,7 @@ pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
-    // create_resource(|| (), |_| async move { init_database().await });
+    // let db = create_resource(|| (), |_| async move { init_database().await });
 
     view! {
         // injects a stylesheet into the document <head>
@@ -32,26 +32,28 @@ pub fn App() -> impl IntoView {
             .into_view()
         }>
         <main>
-        {
-            if let Some(state) = use_context::<AppState>()  {
-                if state.db_connected {
-                    view!{<Routes>
-                        // <Route path="" view=HomePage/>
-                        // <Route path="texts" view=TextTable/>
-                        <Route path="" view=TextTable/>
-                    </Routes>}.into_view()
-                } else {
-                    view!{<div>"NO DATABASE " {state.db_error.unwrap_or_default()}</div>}.into_view()
-                }
-            } else {
-                view!{<div>"ERROR"</div>}.into_view()
-            }
-        }
-                    // <Routes>
-                    //     // <Route path="" view=HomePage/>
-                    //     // <Route path="texts" view=TextTable/>
-                    //     <Route path="" view=TextTable/>
-                    // </Routes>
+
+        // <Suspense fallback = move || {
+        //     view!{<div>"Trying to connect to the database..."</div>}.into_view()
+        // }>
+        // {
+        //     db.get().map(|data| match data {
+        //         Ok(value) => view!{
+        //             <div>"Connected to database: " {value}</div>
+        //             <Routes>
+        //                 <Route path="" view=HomePage/>
+        //                 <Route path="texts" view=TextTable/>
+        //             </Routes>
+        //         }.into_view(),
+        //         Err(error) => view!{<div>{error.to_string()}</div>}.into_view()
+        //     })
+        // }
+        // </Suspense>
+
+        <Routes>
+            <Route path="" view=HomePage/>
+            <Route path="texts" view=TextTable/>
+        </Routes>
 
         </main>
         </Router>
@@ -61,15 +63,15 @@ pub fn App() -> impl IntoView {
 /// Renders the home page of your application.
 #[component]
 fn HomePage() -> impl IntoView {
-    // Creates a reactive value to update the button
-    let (count, set_count) = create_signal(0);
-    let on_click = move |_| set_count.update(|count| *count += 1);
-
     if let Some(state) = use_context::<AppState>() {
         logging::log!("has context {}", state.db_connected);
     } else {
         logging::log!("no context");
     }
+
+    // Creates a reactive value to update the button
+    let (count, set_count) = create_signal(0);
+    let on_click = move |_| set_count.update(|count| *count += 1);
 
     view! {
         <h1>"Welcome to Leptos!"</h1>

@@ -49,7 +49,7 @@ pub fn TextTable() -> impl IntoView {
     //     // view! {<div>"Context: " {state.db_error.get()}</div>}
     //     view! {<div>"No context"</div>}.into_view()
     // }
-    let texts = create_resource(|| (), |_| async move { get_all_texts().await });
+    // let texts = create_resource(|| (), |_| async move { get_all_texts().await });
     // view! {<div>"No context"</div>}.into_view()
 
     // if let Some(state) = use_context::<AppState>() {
@@ -66,18 +66,18 @@ pub fn TextTable() -> impl IntoView {
 
     // let texts = create_resource(|| (), |_| async move { get_all_texts().await });
 
-    view! {
-        <Suspense fallback={move || {
-            view!{<div>"Loading"</div>}
-        }}>
-        {
-            texts.get().map(|data| match data {
-                Ok(value) => view!{<div>"Context" {value.len()}</div>},
-                Err(error) => view!{<div>{error.to_string()}</div>}
-            })
-        }
-        </Suspense>
-    }
+    // view! {
+    //     <Suspense fallback={move || {
+    //         view!{<div>"Loading"</div>}
+    //     }}>
+    //     {
+    //         texts.get().map(|data| match data {
+    //             Ok(value) => view!{<div>"Context" {value.len()}</div>},
+    //             Err(error) => view!{<div>{error.to_string()}</div>}
+    //         })
+    //     }
+    //     </Suspense>
+    // }
 
     // view! {
     //     <div>"hallo"</div>
@@ -96,16 +96,123 @@ pub fn TextTable() -> impl IntoView {
     //     </Suspense>
     // }
 
-    // let texts = create_resource(
-    //     || (),
-    //     |_| async move {
-    //         let r = get_all_texts().await;
-    //         match r {
-    //             Ok(value) => Ok(value),
-    //             Err(error) => Err(error.to_string()),
-    //         }
-    //     },
-    // );
+    let texts = create_resource(
+        || (),
+        |_| async move {
+            match get_all_texts().await {
+                Ok(value) => Ok(value),
+                Err(error) => Err(error.to_string()),
+            }
+        },
+    );
+
+    view! {
+            <Suspense fallback={ move || {
+                view! { <p>"Loading texts..."</p> }}
+            }>
+    /*
+            { move || {
+                texts.get().map(|data| match data {
+                    Ok(value) => {
+                        let (texts, _) = create_signal(value);
+                        view!{
+
+                            <h2>"Data"</h2>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h1>"Texts"</h1>
+                                <a class="btn btn-primary btn"  href="/somewhere">
+                                <i class="bi bi-plus"></i>
+                                "New text"
+                                </a>
+                            </div>
+                            <table class="table table-hover">
+                                <thead>
+                                <tr>
+                                    <th scope="col" class="">
+                                    <a>"Title"</a>
+                                    </th>
+                                    <th scope="col" class="">
+                                    <a>"Published"</a>
+                                    </th>
+                                    <th/>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <For
+                                    each=texts
+                                    key=|text|text.id
+                                    let: text
+                                >
+                                    <tr>
+                                        <td>{text.title}</td>
+                                        <td>{text.published}</td>
+                                        <td align="right">
+                                        <a class="btn btn-outline-primary"
+                                            href="admin_text_edit">
+                                            <i class="bi bi-pencil me-1"></i>
+                                            "Edit"
+                                        </a>
+                                        </td>
+                                    </tr>
+                                </For>
+                                </tbody>
+                            </table>
+                        }.into_view()
+                    },
+                    Err(error) => view!{<div>{error.to_string()}</div>}.into_view(),
+                })
+            }}
+    */
+            {move || {
+                texts.get().map(|data| match data {
+                    Ok(value) => {
+                        view! {
+                            <h2>"Data"</h2>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h1>"Texts"</h1>
+                                <a class="btn btn-primary btn"  href="/somewhere">
+                                <i class="bi bi-plus"></i>
+                                "New text"
+                                </a>
+                            </div>
+                            <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th scope="col" class="">
+                                <a>"Title"</a>
+                                </th>
+                                <th scope="col" class="">
+                                <a>"Published"</a>
+                                </th>
+                                <th/>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {
+                                value.into_iter().map(|text| {
+                                    view!{<tr>
+                                        <td>{text.title}</td>
+                                        <td>{text.published}</td>
+                                        <td align="right">
+                                        <a class="btn btn-outline-primary" href="admin_text_edit">
+                                        <i class="bi bi-pencil me-1"></i>
+                                        "Edit"
+                                        </a>
+                                        </td>
+                                    </tr>}
+                                }).collect_view()
+                            }
+                            </tbody>
+                        </table>
+                        }.into_view()
+                    },
+                    Err(error) => {
+                        view!{<div>{error.to_string()}</div>}.into_view()
+                    }
+                })
+            }}
+            </Suspense>
+        }
 
     // view! {
     //   <h2>"Data"</h2>
@@ -154,24 +261,24 @@ pub fn TextTable() -> impl IntoView {
     //                     }
     //                   }
     //                 />
-    //                 {move || {
-    //                   data.get().into_iter().map(|text|{
-    //                       view! {
-    //                         <tr>
-    //                           <td>{text.title}</td>
-    //                           <td>{text.published}</td>
-    //                           <td align="right">
-    //                           <a class="btn btn-outline-primary"
-    //                           href="admin_text_edit">
-    //                           <i class="bi bi-pencil me-1"></i>
-    //                           "Edit"
-    //                             </a>
-    //                           </td>
-    //                           </tr>
-    //                         }
-    //                       }).collect_view()
-    //                   }
-    //               }
+    //             //     {move || {
+    //             //       data.get().into_iter().map(|text|{
+    //             //           view! {
+    //             //             <tr>
+    //             //               <td>{text.title}</td>
+    //             //               <td>{text.published}</td>
+    //             //               <td align="right">
+    //             //               <a class="btn btn-outline-primary"
+    //             //               href="admin_text_edit">
+    //             //               <i class="bi bi-pencil me-1"></i>
+    //             //               "Edit"
+    //             //                 </a>
+    //             //               </td>
+    //             //               </tr>
+    //             //             }
+    //             //           }).collect_view()
+    //             //       }
+    //             //   }
     //             }.into_view()
     //           },
     //           Err(error) => {
