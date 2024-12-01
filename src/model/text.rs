@@ -2,6 +2,7 @@ use crate::database::{init_database, AppState};
 use leptos::{expect_context, logging, server, use_context, ServerFnError, SignalGet};
 use macros::New;
 use serde::{Deserialize, Serialize};
+use snafu::{ensure, Snafu};
 #[cfg(feature = "ssr")]
 use sqlx::{Error, PgPool};
 #[cfg(feature = "ssr")]
@@ -10,37 +11,38 @@ use uuid::Uuid;
 
 use crate::model::PgId;
 
-// #[server(GetAllTexts, "/api", "GetJson", "text")]
-#[server]
-pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
-    // let state = use_context::<AppState>().expect("Failed to get shared data");
-    // // Use shared_data on the server
-    // Ok(Vec::new())
-
-    // let state = expect_context::<AppState>();
-    // logging::log!("get_all_texts state.db {:?}", state.db.get());
-
+#[cfg(feature = "ssr")]
+pub async fn get_pool() -> Result<PgPool, ServerFnError> {
     if let Some(state) = use_context::<AppState>() {
-        // sleep(Duration::from_millis(1000)).await;
-
-        // init_database().await?;
-
-        if let Some(db) = state.pool {
-            Text::get_all(&db).await.map_err(|x| {
-                tracing::error!("problem while fetching home texts: {x:?}");
-                ServerFnError::new(format!("Problem while fetching home texts: {}", x))
-            })
+        if let Some(pool) = state.pool {
+            Ok(pool)
         } else {
+            tracing::error!("No database");
             Err(ServerFnError::new(format!(
-                "No database connection: {}",
-                // state.db_error.get().unwrap_or_default()
+                "No database connection {}",
                 state.db_error.unwrap_or_default()
             )))
         }
     } else {
-        tracing::error!("No context available...");
-        Err(ServerFnError::new("no context available"))
+        tracing::error!("No context");
+        Err(ServerFnError::new("No context available"))
     }
+}
+
+#[server]
+pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
+    let pool = get_pool().await?;
+    Text::get_all(&pool)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Problem while fetching texts: {}", e)))
+}
+
+#[server]
+pub async fn get_one(id: Uuid) -> Result<Text, ServerFnError> {
+    let pool = get_pool().await?;
+    Text::get_one(id, &pool)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Problem while fetching text {} {}", id, e)))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, New, Default)]
@@ -53,9 +55,30 @@ pub struct Text {
     pub published: bool,
 }
 
+#[derive(Debug, Snafu)]
+enum AppError {
+    #[snafu(display("No database connection"))]
+    Database,
+    #[snafu(display("Context not found"))]
+    Context,
+}
+
 #[cfg(feature = "ssr")]
 impl Text {
-    pub async fn get_all(db: &PgPool) -> Result<Vec<Text>, Error> {
+    // pub fn get_pool(&self) -> Result<PgPool, AppError> {
+    //     ensure!(use_context::<AppState>().is_some(), ContextSnafu);
+    //     let state = use_context::<AppState>().unwrap();
+    //     ensure!(state.pool.is_some(), DatabaseSnafu);
+    //     Ok(state.pool.unwrap())
+    // }
+
+    // pub fn get_pool(&self) -> PgPool {
+    //     let state = use_context::<AppState>().unwrap();
+    //     state.pool.unwrap()
+    // }
+
+    pub async fn get_all(pool: &PgPool) -> Result<Vec<Text>, sqlx::Error> {
+        // let pool = &self.get_pool();
         sqlx::query_as!(
             Self,
             r#"
@@ -64,7 +87,7 @@ impl Text {
             GROUP BY id
             "#
         )
-        .fetch_all(db)
+        .fetch_all(pool)
         .await
     }
 

@@ -56,7 +56,7 @@ pub fn App() -> impl IntoView {
         <Routes>
             <Route path="" view=HomePage/>
             <Route path="texts" view=TextTable/>
-            <Route path="text-form" view=TextForm/>
+            <Route path="text-form/:id?" view=TextForm/>
         </Routes>
 
         </main>

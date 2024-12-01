@@ -5,7 +5,7 @@ use leptos::*;
 pub fn TextTable() -> impl IntoView {
     logging::log!("TextTable");
 
-    let texts = create_resource(
+    let texts: Resource<(), Result<Vec<crate::model::Text>, String>> = create_resource(
         || (),
         |_| async move {
             match get_all_texts().await {
@@ -27,7 +27,7 @@ pub fn TextTable() -> impl IntoView {
                         view!{
                             <div class="d-flex justify-content-between align-items-center">
                                 <h1>"Texts"</h1>
-                                <a class="btn btn-primary btn"  href="/text-form">
+                                <a class="btn btn-primary btn"  href="/text-form/">
                                 <i class="bi bi-plus"></i>
                                 "New text"
                                 </a>
@@ -41,7 +41,9 @@ pub fn TextTable() -> impl IntoView {
                                     <th scope="col" class="">
                                     <a>"Published"</a>
                                     </th>
-                                    <th/>
+                                    <th scope="col" class="">
+                                    <a>"Uuid"</a>
+                                    </th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -50,17 +52,21 @@ pub fn TextTable() -> impl IntoView {
                                     key=|text|text.id
                                     let: text
                                 >
-                                    <tr>
-                                        <td>{text.title}</td>
-                                        <td>{text.published}</td>
-                                        <td align="right">
-                                        <a class="btn btn-outline-primary"
-                                            href="admin_text_edit">
-                                            <i class="bi bi-pencil me-1"></i>
-                                            "Edit"
-                                        </a>
-                                        </td>
-                                    </tr>
+                                {
+                                    let href = format!("/text-form/{}",text.id.to_string());
+                                    view! {<tr>
+                                    <td>{text.title}</td>
+                                    <td>{text.published}</td>
+                                    <td>{text.id.to_string()}</td>
+                                    <td align="right">
+                                    <a class="btn btn-outline-primary"
+                                    href={href}>
+                                    <i class="bi bi-pencil me-1"></i>
+                                    "Edit"
+                                    </a>
+                                    </td>
+                                    </tr>}
+                                }
                                 </For>
                                 </tbody>
                             </table>
