@@ -1,9 +1,13 @@
 use ev::PointerEvent;
+use leptos::prelude::*;
 use leptos::*;
-use leptos_router::use_params;
-use leptos_router::Params;
+use leptos_router::hooks::use_params_map;
+use leptos_router::params::Params;
+use prelude::Read;
+use prelude::Suspense;
 use serde::Deserialize;
 use serde::Serialize;
+use server::Resource;
 use uuid::Uuid;
 
 use crate::model::text::get_one;
@@ -17,26 +21,30 @@ struct TextParams {
 #[component]
 pub fn TextForm() -> impl IntoView {
     logging::log!("TextForm");
-    let params = use_params::<TextParams>();
-    let uuid: Option<Uuid> = params.with(move |value| match value {
-        Ok(v) => {
-            if v.id.is_some() {
-                // logging::log!("id: {}", v.id.unwrap().to_string());
-                v.id
-            } else {
-                None
-            }
-        }
-        Err(error) => {
-            // logging::log!("error: {}", error.to_string());
-            None
-        }
-    });
+    // let params = use_params::<TextParams>();
+    // let (uuid, set_uuid) = create_signal(None);
+    // create_effect(move |_| {
+    //     params.with(move |value| match value {
+    //         Ok(v) => {
+    //             if v.id.is_some() {
+    //                 // logging::log!("id: {}", v.id.unwrap().to_string());
+    //                 set_uuid(v.id);
+    //             }
+    //         }
+    //         Err(error) => {
+    //             logging::log!("error: {}", error.to_string());
+    //         }
+    //     });
+    // });
 
-    let text: Resource<(), Result<Option<Text>, String>> = create_resource(
+    let params = use_params_map();
+    let id = move || params.try_read().expect("couldn't read params").get("id");
+
+    let text = Resource::new(
         || (),
         move |_| async move {
-            if let Some(id) = uuid {
+            if let Some(id) = id() {
+                let id = Uuid::parse_str(&id).unwrap();
                 match get_one(id).await {
                     Ok(value) => Ok(Some(value)),
                     Err(error) => Err(error.to_string()),
@@ -83,21 +91,24 @@ pub fn TextForm() -> impl IntoView {
 
     view! {
       <Suspense fallback={
-        move || view!{<div>"Loading..."</div>}
+        move || view!{<div>"Loading..."</div>}.into_view()
       }>
       {
         move|| {
           text.get().map(|n| {
-            // if let Ok(Some(text)) = n {
-            //     title = text.title;
-            //     published = text.published;
-            //     logging::log!("{} {}", title, published);
-            // }
-            // view!{
-            //   <div>{title}</div>
-            //   <div>{published}</div>
-            // }
-            view!{<div>"nothing"</div>}.into_view()
+            if let Ok(Some(text)) = n {
+              let title = text.title;
+              let published = text.published;
+              // logging::log!("{} {}", title, published);
+              view!{
+                <div>{title}</div>
+                <div>{published.to_string()}</div>
+              }.into_any()
+            } else {
+              view!{
+                <div>"nothing"</div>
+              }.into_any()
+            }
         });
       }}
       </Suspense>

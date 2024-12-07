@@ -1,7 +1,27 @@
-use leptos::*;
-use leptos_router::A;
-
 use crate::{component::text_form::TextForm, database::AppState};
+use leptos::prelude::*;
+use leptos::*;
+use leptos_meta::MetaTags;
+use leptos_router::components::*;
+
+pub fn shell(options: LeptosOptions) -> impl IntoView {
+    view! {
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <AutoReload options=options.clone() />
+                <HydrationScripts options/>
+                <MetaTags/>
+            </head>
+            <body>
+                <App/>
+            </body>
+        </html>
+    }
+}
+
 #[component]
 pub fn App() -> impl IntoView {
     use crate::component::text_table::TextTable;
@@ -26,14 +46,7 @@ pub fn App() -> impl IntoView {
         <Title text="Leptos Admin"/>
 
         // content for this welcome page
-        <Router fallback=|| {
-            let mut outside_errors = Errors::default();
-            outside_errors.insert_with_default_key(AppError::NotFound);
-            view! {
-                <ErrorTemplate outside_errors/>
-            }
-            .into_view()
-        }>
+        <Router>
         <main>
 
         // <Suspense fallback = move || {
@@ -53,10 +66,17 @@ pub fn App() -> impl IntoView {
         // }
         // </Suspense>
 
-        <Routes>
-            <Route path="" view=HomePage/>
-            <Route path="texts" view=TextTable/>
-            <Route path="text-form/:id?" view=TextForm/>
+        <Routes fallback=|| {
+            let mut outside_errors = Errors::default();
+            outside_errors.insert_with_default_key(AppError::NotFound);
+            view! {
+                <ErrorTemplate outside_errors/>
+            }
+        }>
+            <Route path=path!("") view=HomePage/>
+            <Route path=path!("texts") view=TextTable/>
+            // <Route path=path!("text-form/:id?") view=TextForm/>
+            // <Route path=path!("text-form/:id") view=TextForm2/>
         </Routes>
 
         </main>
@@ -67,15 +87,26 @@ pub fn App() -> impl IntoView {
 /// Renders the home page of your application.
 #[component]
 fn HomePage() -> impl IntoView {
-    if let Some(state) = use_context::<AppState>() {
-        logging::log!("Homepage has context {}", state.db_connected);
-    } else {
-        logging::log!("Homepage has no context");
-    }
-
+    // if let Some(state) = use_context::<AppState>() {
+    //     logging::log!("Homepage has context {}", state.db_connected);
+    // } else {
+    //     logging::log!("Homepage has no context");
+    // }
     view! {
         <h1>"Admin"</h1>
         <A href="/texts">"Show all texts"</A>
+    }
+}
+
+#[component]
+fn TextForm2() -> impl IntoView {
+    if let Some(state) = use_context::<AppState>() {
+        logging::log!("TextForm2 has context {:?}", state);
+    } else {
+        logging::log!("TextForm2 has no context");
+    }
+    view! {
+        <h1>"TextForm2"</h1>
     }
 }
 

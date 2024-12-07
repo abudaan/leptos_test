@@ -1,7 +1,8 @@
 use leptos::{
-    create_rw_signal, expect_context, logging, server, use_context, RwSignal, ServerFnError,
+    logging,
+    prelude::{use_context, ServerFnError},
+    server,
 };
-use leptos::{SignalGet, SignalSet};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use sqlx::{Error, PgPool};
@@ -12,8 +13,7 @@ use sqlx::{Error, PgPool};
 //     #[cfg(feature = "ssr")]
 //     pub db: Option<PgPool>,
 // }
-
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AppState {
     pub db_error: Option<String>,
     pub db_connected: bool,
@@ -163,3 +163,20 @@ pub async fn database_connected() -> Result<bool, ServerFnError> {
 //         },
 //     }
 // }
+
+#[cfg(feature = "ssr")]
+pub mod ssr {
+    use std::time::Duration;
+
+    // use http::{header::SET_COOKIE, HeaderMap, HeaderValue, StatusCode};
+    use leptos::server_fn::ServerFnError;
+    use sqlx::{postgres::PgPoolOptions, PgPool};
+
+    pub async fn db() -> Result<PgPool, ServerFnError> {
+        Ok(PgPoolOptions::new()
+            .max_connections(10)
+            .idle_timeout(Duration::from_secs(2))
+            .connect("http://diabetes@localhost:5432/diabetes")
+            .await?)
+    }
+}

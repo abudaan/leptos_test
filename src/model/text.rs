@@ -1,5 +1,10 @@
-use crate::database::{init_database, AppState};
-use leptos::{expect_context, logging, server, use_context, ServerFnError, SignalGet};
+#[cfg(feature = "ssr")]
+use crate::database::ssr::db;
+use crate::database::AppState;
+use leptos::{
+    prelude::{use_context, ServerFnError},
+    server,
+};
 use macros::New;
 use serde::{Deserialize, Serialize};
 use snafu::{ensure, Snafu};
@@ -29,9 +34,11 @@ pub async fn get_pool() -> Result<PgPool, ServerFnError> {
     }
 }
 
-#[server]
+// #[server(Json)]
+#[server(GetAllTexts, "/api", "GetJson", "get_all_texts")]
 pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
-    let pool = get_pool().await?;
+    // let pool = get_pool().await?;
+    let pool = db().await?;
     Text::get_all(&pool)
         .await
         .map_err(|e| ServerFnError::new(format!("Problem while fetching texts: {}", e)))
@@ -39,7 +46,8 @@ pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
 
 #[server]
 pub async fn get_one(id: Uuid) -> Result<Text, ServerFnError> {
-    let pool = get_pool().await?;
+    // let pool = get_pool().await?;
+    let pool = db().await?;
     Text::get_one(id, &pool)
         .await
         .map_err(|e| ServerFnError::new(format!("Problem while fetching text {} {}", id, e)))
