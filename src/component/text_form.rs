@@ -30,63 +30,57 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
     }
     // logging::log!("{} {} {}", title, published, content);
 
+    let title_empty = move || title().is_empty();
+
     view! {
     <form class="row g-9" autocomplete="off" novalidate="true">
       <div class="col-md-9">
         <label for="title" class="form-label">Title</label>
         <input type="text" id="title" class="form-control" required="true"
             prop:value={title}
-            on:input=move |ev| {
-              set_title(event_target_value(&ev));
-              if title().is_empty() {
-                logging::log!("{:?} {} {}", ev, title(), title().is_empty());
-              }
-            }
-            on:blur=move |ev| {
-              set_title(event_target_value(&ev));
-              logging::log!("{:?} {}", ev, title());
-            }
-            // on:input:target=move |ev:InputEvent| {
-            //     // .value() returns the current value of an HTML input element
-            //     // let value = event_target_value(&ev);
-            //     // set_name.set(&value);
-            //     // let value = std::convert::Into::<HtmlInputElement>::into(ev.target().unwrap());
-            //     logging::log!("value {:?}",  ev);
-            //     // set_name.set(ev.value());
+            // on:input=move |ev| {
+            //   set_title(event_target_value(&ev));
+            //   if title().is_empty() {
+            //     logging::log!("{:?} {} {}", ev, title(), title().is_empty());
+            //   }
             // }
+            // on:blur=move |ev| {
+            //   set_title(event_target_value(&ev));
+            //   logging::log!("{:?} {}", ev, title());
+            // }
+            on:input:target=move |ev| {
+              // .value() returns the current value of an HTML input element
+              set_title(ev.target().value());
+              // logging::log!("{}", title());
+            }
         />
-        { move || {
-          let title = title();
-          if title.is_empty() {
-            view! {<div class="invalid-feedback">
-              Please enter a title
-            </div>}.into_any()
-          } else {
-            ().into_any()
+        { move || match title_empty(){
+            true => view! {
+                <div class="invalid-feedback">
+                  Please enter a title
+                </div>}.into_any(),
+            false => ().into_any()
           }
-        }}
+        }
       </div>
-      // <input type="text" class="form-control" prop:value={name} />
-
 
       <div class="col-md-9">
         <label for="content" class="form-label">Content</label>
         <textarea id="content" required="true" class="form-control" rows="10"
-            // on:change:target=move |ev: change|{}
+          prop:value=content
+          on:input:target=move |ev| set_content(ev.target().value())
         >
-        {content}
+          {content.get_untracked()}
         </textarea>
-        { move || {
-          let title = title();
-          if title.is_empty() {
-            view! {<div class="invalid-feedback">
-              Please enter content
-            </div>}.into_any()
-          } else {
-            ().into_any()
-          }
-        }}
-        </div>
+
+        <Show
+          when=move || title().is_empty()
+          fallback=|| view! { <div>"Please enter content"</div> }
+        >
+          // <p>"Even numbers are fine."</p>
+          <div class="invalid-feedback">"Please enter content"</div>
+        </Show>
+      </div>
 
     //   <div className="col-md-9">
     //     <input type="checkbox" id="published" checked="false" className="ml-2" onChange={} />
