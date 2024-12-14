@@ -1,3 +1,4 @@
+use crate::component::text_form::TextForm;
 use crate::database::AppState;
 use leptos::prelude::*;
 use leptos::*;
@@ -13,10 +14,16 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <AutoReload options=options.clone() />
                 <HydrationScripts options/>
+                // id=leptos means cargo-leptos will hot-reload this stylesheet
+                <link rel="stylesheet" id="leptos" href="/pkg/diabetes-game-admin.css"/>
+                <link rel="stylesheet" id="bootstrap" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+                <link rel="stylesheet" id="bootstrap-icons" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
                 <MetaTags/>
+                <title>Leptos Admin</title>
             </head>
             <body>
                 <App/>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"/>
             </body>
         </html>
     }
@@ -29,23 +36,11 @@ pub fn App() -> impl IntoView {
     use leptos_meta::*;
     use leptos_router::*;
     // Provides context that manages stylesheets, titles, meta tags, etc.
-    provide_meta_context();
+    // provide_meta_context();
 
     view! {
-        // injects a stylesheet into the document <head>
-        // id=leptos means cargo-leptos will hot-reload this stylesheet
-        <Stylesheet id="leptos" href="/pkg/diabetes-game-admin.css"/>
-        <Stylesheet id="bootstrap" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-        <Stylesheet id="bootstrap-icons" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-
-        <Script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"/>
-
-        // sets the document title
-        <Title text="Leptos Admin"/>
-
-        // content for this welcome page
-        <Router>
         <main>
+        <Router>
 
         // <Suspense fallback = move || {
         //     view!{<div>"Trying to connect to the database..."</div>}.into_view()
@@ -64,21 +59,28 @@ pub fn App() -> impl IntoView {
         // }
         // </Suspense>
 
-        <Routes fallback=|| {
-            let mut outside_errors = Errors::default();
-            outside_errors.insert_with_default_key(AppError::NotFound);
-            view! {
-                <ErrorTemplate outside_errors/>
-            }
-        }>
-            <Route path=path!("") view=HomePage/>
-            <Route path=path!("texts") view=TextTable/>
-            // <Route path=path!("text-form/:id?") view=TextForm/>
-            // <Route path=path!("text-form/:id") view=TextForm2/>
-        </Routes>
+            <Routes fallback=|| {
+                let mut outside_errors = Errors::default();
+                outside_errors.insert_with_default_key(AppError::NotFound);
+                view! {
+                    <ErrorTemplate outside_errors/>
+                }
+            }>
+                <Route path=path!("") view=HomePage/>
+                <Route path=path!("texts") view=TextTable/>
+                <ParentRoute path=path!("text-form") view=TextForm>
+                    <Route path=path!("/") view=TextForm/>
+                    <Route path=path!("/:id") view=TextForm/>
+                </ParentRoute>
 
-        </main>
+
+                // <Route path=path!("text-form/:id?") view=TextForm/>
+                // <Route path=path!("text-form/:id") view=TextForm/>
+                // <Route path=path!("text-form/:id") view=TextForm2/>
+            </Routes>
+
         </Router>
+        </main>
     }
 }
 
