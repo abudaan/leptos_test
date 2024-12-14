@@ -1,4 +1,4 @@
-use crate::{component::text_form::TextForm, database::AppState};
+use crate::database::AppState;
 use leptos::prelude::*;
 use leptos::*;
 use leptos_meta::MetaTags;
@@ -30,8 +30,6 @@ pub fn App() -> impl IntoView {
     use leptos_router::*;
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
-
-    // let db = create_resource(|| (), |_| async move { init_database().await });
 
     view! {
         // injects a stylesheet into the document <head>

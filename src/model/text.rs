@@ -1,6 +1,6 @@
 #[cfg(feature = "ssr")]
 use crate::database::ssr::db;
-use crate::database::AppState;
+use crate::{database::AppState, error_template::AppError};
 use leptos::{
     prelude::{use_context, ServerFnError},
     server,
@@ -16,23 +16,23 @@ use uuid::Uuid;
 
 use crate::model::PgId;
 
-#[cfg(feature = "ssr")]
-pub async fn get_pool() -> Result<PgPool, ServerFnError> {
-    if let Some(state) = use_context::<AppState>() {
-        if let Some(pool) = state.pool {
-            Ok(pool)
-        } else {
-            tracing::error!("No database");
-            Err(ServerFnError::new(format!(
-                "No database connection {}",
-                state.db_error.unwrap_or_default()
-            )))
-        }
-    } else {
-        tracing::error!("No context");
-        Err(ServerFnError::new("No context available"))
-    }
-}
+// #[cfg(feature = "ssr")]
+// pub async fn get_pool() -> Result<PgPool, ServerFnError> {
+//     if let Some(state) = use_context::<AppState>() {
+//         if let Some(pool) = state.pool {
+//             Ok(pool)
+//         } else {
+//             tracing::error!("No database");
+//             Err(ServerFnError::new(format!(
+//                 "No database connection {}",
+//                 state.db_error.unwrap_or_default()
+//             )))
+//         }
+//     } else {
+//         tracing::error!("No context");
+//         Err(ServerFnError::new("No context available"))
+//     }
+// }
 
 // #[server(Json)]
 #[server(GetAllTexts, "/api", "GetJson", "get_all_texts")]
@@ -63,13 +63,13 @@ pub struct Text {
     pub published: bool,
 }
 
-#[derive(Debug, Snafu)]
-enum AppError {
-    #[snafu(display("No database connection"))]
-    Database,
-    #[snafu(display("Context not found"))]
-    Context,
-}
+// #[derive(Debug, Snafu)]
+// enum AppError {
+//     #[snafu(display("No database connection"))]
+//     Database,
+//     #[snafu(display("Context not found"))]
+//     Context,
+// }
 
 #[cfg(feature = "ssr")]
 impl Text {

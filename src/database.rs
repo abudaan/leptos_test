@@ -172,6 +172,11 @@ pub mod ssr {
     use leptos::server_fn::ServerFnError;
     use sqlx::{postgres::PgPoolOptions, PgPool};
 
+    // migrate!()
+    //     .run(&pool)
+    //     .await
+    //     .expect("could not run SQLx migrations");
+
     pub async fn db() -> Result<PgPool, ServerFnError> {
         Ok(PgPoolOptions::new()
             .max_connections(10)

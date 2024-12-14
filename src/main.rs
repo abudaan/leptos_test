@@ -1,5 +1,3 @@
-use axum::routing::post;
-
 #[cfg(feature = "ssr")]
 mod ssr_imports {
     use axum::extract::State;
@@ -9,12 +7,10 @@ mod ssr_imports {
         http::Request,
         response::{IntoResponse, Response},
         routing::get,
-        Router,
     };
     use diabetes_game_admin::app::shell;
-    pub use diabetes_game_admin::app::App;
     use leptos::{config::LeptosOptions, context::provide_context};
-    pub use leptos_axum::{generate_route_list, LeptosRoutes};
+    pub use leptos_axum::LeptosRoutes;
 
     // This custom handler lets us provide Axum State via context
     pub async fn custom_handler(
@@ -38,13 +34,9 @@ async fn main() {
     use axum::Router;
     use config::get_configuration;
     use diabetes_game_admin::app::*;
-    use diabetes_game_admin::database::AppState;
     use leptos::*;
     use leptos_axum::generate_route_list;
-    use prelude::provide_context;
-    use sqlx::postgres::PgPoolOptions;
     use ssr_imports::*;
-    use std::time::Duration;
 
     // Setting get_configuration(None) means we'll be using cargo-leptos's env values
     // For deployment these variables are:
@@ -55,34 +47,8 @@ async fn main() {
     let leptos_options = conf.leptos_options;
     // logging::log!("where do I run??? {:?} ", leptos_options);
     let addr = leptos_options.site_addr;
-    // let routes = generate_route_list(App);
 
-    let pool = PgPoolOptions::new()
-        .max_connections(10)
-        .idle_timeout(Duration::from_secs(2))
-        .connect("http://diabetes@localhost:5432/diabetes")
-        .await;
-
-    // migrate!()
-    //     .run(&pool)
-    //     .await
-    //     .expect("could not run SQLx migrations");
-
-    let mut state = AppState::new();
-    match pool {
-        Ok(p) => {
-            state.pool = Some(p);
-            state.db_connected = true;
-        }
-        Err(error) => {
-            state.db_error = Some(error.to_string());
-        }
-    }
-    let db_error = state.db_error.clone().unwrap_or_default();
-    logging::log!("state {}", &db_error);
-
-    // let state = AppState::new();
-    let context = move || provide_context(state.clone());
+    // let context = move || provide_context(state.clone());
     let routes = generate_route_list(App);
 
     let app = Router::new()
