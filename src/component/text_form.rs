@@ -18,15 +18,45 @@ struct TextParams {
     id: Option<Uuid>,
 }
 
+fn create_modal(title: String) -> impl IntoView {
+    view! {
+    <div class="modal" id="deleteTextModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Warning!</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure that you want to delete the text <b>{title}</b>?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
+            on:click= move |ev| {
+              // deleteText(text.id).then();
+              // setLoading(true);
+              // navigate('admin_text_index');
+            }>
+              Delete text
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>}
+}
+
 fn create_view(text: &Option<Text>) -> impl IntoView {
     let (title, set_title) = signal(String::new());
     let (content, set_content) = signal(String::new());
     let (published, set_published) = signal(false);
+    let mut new_entry = true;
     if let Some(text) = text {
         let text = text.clone();
         set_title(text.title.clone());
         set_content(text.content.clone());
         set_published(text.published);
+        new_entry = false;
     }
     // logging::log!("{} {} {}", title, published, content);
 
@@ -67,7 +97,7 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         <label for="content" class="form-label">Content</label>
         <textarea id="content" required="true" class="form-control" rows="10"
           prop:value=content
-          on:input:target=move |ev| set_content(ev.target().value())
+          on:input:target=move|ev|set_content(ev.target().value())
         >
           {content.get_untracked()}
         </textarea>
@@ -81,18 +111,24 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
       </Show>
       </div>
 
-    //   <div className="col-md-9">
-    //     <input type="checkbox" id="published" checked="false" className="ml-2" onChange={} />
-    //     <label htmlFor="published" className="form-label mx-1">Published</label>
-    //   </div>
+      <div class="col-md-9">
+        <input type="checkbox" id="published" checked={published} class="ml-2"
+          on:change:target=move|ev|set_published(ev.target().checked()) />
+        <label htmlFor="published" className="form-label mx-1">Published</label>
+      </div>
 
-    //   {state.route.name === 'admin_text_edit' &&
-    //     <div className="col-12">
-    //       <button className="btn btn-outline-danger me-2" type="button"
-    //         data-bs-toggle="modal" data-bs-target="#deleteTextModal">
-    //         Delete text
-    //       </button>
-    //     </div>}
+      <Show
+        when=move || !new_entry
+        fallback=|| ().into_any()
+      >
+        <div class="col-12">
+          <button class="btn btn-outline-danger me-2" type="button"
+            data-bs-toggle="modal" data-bs-target="#deleteTextModal">
+            Delete text
+          </button>
+        </div>
+      </Show>
+
 
       // <div className="col-12 pt-3 mb-5">
       //   <button type="button" className="btn btn-primary me-2" on:click:target= move |ev: PointerEvent|{
@@ -110,6 +146,8 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
       //   </button>
       // </div>
     </form>
+
+    {create_modal(title())}
 
     // {status === 'success' &&
     //   <div className="alert alert-success mb-5">
