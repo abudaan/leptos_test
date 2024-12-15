@@ -1,6 +1,7 @@
 use either::Either;
 use leptos::prelude::*;
 use leptos::*;
+use leptos_router::components::Form;
 use leptos_router::hooks::use_params;
 use leptos_router::params::Params;
 use prelude::Read;
@@ -10,7 +11,8 @@ use server::Resource;
 use uuid::Uuid;
 
 use crate::error_template::ErrorTemplate;
-use crate::model::text::get_one;
+use crate::model::text::Add;
+use crate::model::text::{add, get_one};
 use crate::model::Text;
 
 #[derive(Params, PartialEq, Serialize, Deserialize)]
@@ -59,28 +61,30 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         new_entry = false;
     }
     // logging::log!("{} {} {}", title, published, content);
-
+    // class="row g-9" autocomplete="off" novalidate="true"
+    let add_text = ServerAction::<Add>::new();
     view! {
-    <form class="row g-9" autocomplete="off" novalidate="true">
+    <ActionForm action=add_text>
+    // <form>
       <div class="col-md-9">
         <label for="title" class="form-label">Title</label>
-        <input type="text" id="title" class="form-control" required="true"
-            prop:value={title}
+        <input type="text" id="title" name="text[title]" class="form-control" required="true"
+            // prop:value={title.get_untracked()}
             // on:input=move |ev| {
             //   set_title(event_target_value(&ev));
             //   if title().is_empty() {
             //     logging::log!("{:?} {} {}", ev, title(), title().is_empty());
             //   }
             // }
-            // on:blur=move |ev| {
-            //   set_title(event_target_value(&ev));
-            //   logging::log!("{:?} {}", ev, title());
-            // }
-            on:input:target=move |ev| {
-              // .value() returns the current value of an HTML input element
-              set_title(ev.target().value());
-              // logging::log!("{}", title());
+            on:blur=move |ev| {
+              set_title(event_target_value(&ev));
+              // logging::log!("{:?} {}", ev, title());
             }
+            // on:blur:target=move |ev| {
+            //   // .value() returns the current value of an HTML input element
+            //   set_title(ev.target().value());
+            //   // logging::log!("{}", title());
+            // }
         />
         <Show
           when=move || title().is_empty()
@@ -95,9 +99,10 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
       <div class="col-md-9">
         <label for="content" class="form-label">Content</label>
-        <textarea id="content" required="true" class="form-control" rows="10"
-          prop:value=content
-          on:input:target=move|ev|set_content(ev.target().value())
+        <textarea id="content" name="text[content]" required="true" class="form-control" rows="10"
+          // prop:value=content.get_untracked()
+          // on:blur:target=move|ev|set_content(ev.target().value())
+          on:blur=move|ev|set_content(event_target_value(&ev))
         >
           {content.get_untracked()}
         </textarea>
@@ -112,9 +117,11 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
       </div>
 
       <div class="col-md-9">
-        <input type="checkbox" id="published" checked={published} class="ml-2"
-          on:change:target=move|ev|set_published(ev.target().checked()) />
-        <label htmlFor="published" className="form-label mx-1">Published</label>
+        <input type="checkbox" id="published" name="text[published]" checked={published.get_untracked()} class="ml-2"
+          on:change:target=move|ev|{
+            set_published(ev.target().checked());
+          } />
+        <label for="published" class="form-label mx-1">Published</label>
       </div>
 
       <Show
@@ -130,22 +137,22 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
       </Show>
 
 
-      // <div className="col-12 pt-3 mb-5">
-      //   <button type="button" className="btn btn-primary me-2" on:click:target= move |ev: PointerEvent|{
-      //       // logging::log!("click {}", ev.target().unwrap().as_ref::<HtmlInputElement>());
-      //       logging::log!("click {}", ev.target().unwrap().to_string());
-      //   }>
-      //     Save
-      //   </button>
-      //   <button type="button" className="btn btn-outline-danger"
-      //       on:click:target= move |ev: PointerEvent|{
-      //       // logging::log!("click {}", ev.target().unwrap().as_ref::<HtmlInputElement>());
-      //       logging::log!("click {}", ev.target().unwrap().to_string());
-      //   }
-      //   >Cancel
-      //   </button>
-      // </div>
-    </form>
+      <div class="col-12 pt-3 mb-5">
+        // <button type="submit" class="btn btn-primary me-2" on:click:target= move |ev| move async{
+        //     add(title(), content(), published()).await;
+        // }>
+        //   Save
+        // </button>
+        <input type="submit" class="btn btn-primary me-2" value="Save"/>
+        <button type="button" class="btn btn-outline-danger"
+            on:click:target= move |ev|{
+            logging::log!("click {}", ev.target().to_string());
+        }
+        >Cancel
+        </button>
+      </div>
+    </ActionForm>
+    // </form>
 
     {create_modal(title())}
 
@@ -159,7 +166,6 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
     //     Something went wrong!
     //   </div>}
 
-    // <DeleteModal text={text} setLoading={setLoading} />
 
         }
     .into_view()

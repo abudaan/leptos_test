@@ -5,11 +5,11 @@ use leptos::{
     prelude::{use_context, ServerFnError},
     server,
 };
-use macros::New;
+// use macros::New;
 use serde::{Deserialize, Serialize};
-use snafu::{ensure, Snafu};
+// use snafu::{ensure, Snafu};
 #[cfg(feature = "ssr")]
-use sqlx::{Error, PgPool};
+use sqlx::PgPool;
 #[cfg(feature = "ssr")]
 use tokio::time::{sleep, Duration};
 use uuid::Uuid;
@@ -53,14 +53,28 @@ pub async fn get_one(id: Uuid) -> Result<Text, ServerFnError> {
         .map_err(|e| ServerFnError::new(format!("Problem while fetching text {} {}", id, e)))
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, New, Default)]
-#[new(derive(Deserialize, Clone))]
+#[server(Add)]
+pub async fn add(text: NewText) -> Result<Uuid, ServerFnError> {
+    let pool = db().await?;
+    Text::add(text, &pool)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Problem while adding text {}", e)))
+}
+
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+// #[new(derive(Deserialize, Clone))]
 pub struct Text {
-    #[new(skip)]
+    // #[new(skip)]
     pub id: Uuid,
     pub title: String,
     pub content: String,
     pub published: bool,
+}
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+pub struct NewText {
+    pub title: String,
+    pub content: String,
+    pub published: String,
 }
 
 // #[derive(Debug, Snafu)]
@@ -85,7 +99,7 @@ impl Text {
     //     state.pool.unwrap()
     // }
 
-    pub async fn get_all(pool: &PgPool) -> Result<Vec<Text>, sqlx::Error> {
+    async fn get_all(pool: &PgPool) -> Result<Vec<Text>, sqlx::Error> {
         // let pool = &self.get_pool();
         sqlx::query_as!(
             Self,
@@ -99,7 +113,7 @@ impl Text {
         .await
     }
 
-    pub async fn get_one(id: Uuid, db: &PgPool) -> Result<Self, sqlx::Error> {
+    async fn get_one(id: Uuid, db: &PgPool) -> Result<Self, sqlx::Error> {
         sqlx::query_as!(
             Self,
             r#"
@@ -114,23 +128,23 @@ impl Text {
         .await
     }
 
-    pub async fn add(new_text: NewText, db: &PgPool) -> Result<Uuid, sqlx::Error> {
+    async fn add(text: NewText, db: &PgPool) -> Result<Uuid, sqlx::Error> {
         Ok(sqlx::query_as!(
             PgId,
             r#"
             INSERT INTO text (title, content, published) VALUES ($1, $2, $3)
             RETURNING id
             "#,
-            new_text.title,
-            new_text.content,
-            new_text.published,
+            text.title,
+            text.content,
+            text.published == "on",
         )
         .fetch_one(db)
         .await?
         .id)
     }
 
-    pub async fn update(id: Uuid, text: NewText, db: &PgPool) -> Result<Self, sqlx::Error> {
+    async fn update(id: Uuid, text: NewText, db: &PgPool) -> Result<Self, sqlx::Error> {
         sqlx::query_as!(
             Text,
             r#"
@@ -142,7 +156,7 @@ impl Text {
             id,
             text.title,
             text.content,
-            text.published,
+            text.published == "on",
         )
         .fetch_one(db)
         .await
