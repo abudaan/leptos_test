@@ -30,8 +30,6 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
     }
     // logging::log!("{} {} {}", title, published, content);
 
-    let title_empty = move || title().is_empty();
-
     view! {
     <form class="row g-9" autocomplete="off" novalidate="true">
       <div class="col-md-9">
@@ -54,14 +52,15 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
               // logging::log!("{}", title());
             }
         />
-        { move || match title_empty(){
-            true => view! {
-                <div class="invalid-feedback">
-                  Please enter a title
-                </div>}.into_any(),
-            false => ().into_any()
-          }
-        }
+        <Show
+          when=move || title().is_empty()
+          fallback=|| ().into_any()
+        >
+          // <div class:invalid-feedback=move || title().is_empty()>
+          <div class="error">
+            "Please enter a title"
+          </div>
+        </Show>
       </div>
 
       <div class="col-md-9">
@@ -72,14 +71,14 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         >
           {content.get_untracked()}
         </textarea>
-
         <Show
-          when=move || title().is_empty()
-          fallback=|| view! { <div>"Please enter content"</div> }
+          when=move || content().is_empty()
+          fallback=|| ().into_any()
         >
-          // <p>"Even numbers are fine."</p>
-          <div class="invalid-feedback">"Please enter content"</div>
-        </Show>
+          <div class="error">
+            "Please enter content"
+          </div>
+      </Show>
       </div>
 
     //   <div className="col-md-9">
@@ -161,8 +160,8 @@ pub fn TextForm() -> impl IntoView {
     let text_view = move || {
         Suspend::new(async move {
             text_resource.map(|text| match text {
-                Ok(text) => Either::Left(create_view(text)),
-                Err(err) => Either::Right(view! { <p>{err.to_string()}</p> }.into_any()),
+                Ok(text) => create_view(text).into_any(),
+                Err(err) => view! { <p>{err.to_string()}</p> }.into_any(),
             })
         })
     };
