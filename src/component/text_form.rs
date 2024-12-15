@@ -51,46 +51,53 @@ fn create_modal(title: String) -> impl IntoView {
 fn create_view(text: &Option<Text>) -> impl IntoView {
     let (title, set_title) = signal(String::new());
     let (content, set_content) = signal(String::new());
-    let (published, set_published) = signal(false);
+    let (published, set_published) = signal("false");
     let mut new_entry = true;
     if let Some(text) = text {
         let text = text.clone();
-        set_title(text.title.clone());
-        set_content(text.content.clone());
-        set_published(text.published);
+        set_title.set(text.title.clone());
+        set_content.set(text.content.clone());
+        set_published.set(if text.published { "true" } else { "false" });
         new_entry = false;
     }
+
+    let (error_title, set_error_title) = signal(None::<String>);
+    let (error_content, set_error_content) = signal(None::<String>);
+
+    let on_submit = move |ev: ev::SubmitEvent| {
+        // logging::log!("published submit {}", published());
+        let data = Add::from_event(&ev);
+        let text = data.unwrap().text;
+        logging::log!("title {} {}", text.title, text.title.is_empty());
+        if text.title.is_empty() {
+            set_error_title.set(Some("Please enter a title".to_string()));
+            // ev.prevent_default() will prevent form submission
+            ev.prevent_default();
+        }
+        if text.content.is_empty() {
+            set_error_content.set(Some("Please enter content".to_string()));
+            // ev.prevent_default() will prevent form submission
+            ev.prevent_default();
+        }
+    };
+
     // logging::log!("{} {} {}", title, published, content);
     // class="row g-9" autocomplete="off" novalidate="true"
     let add_text = ServerAction::<Add>::new();
     view! {
-    <ActionForm action=add_text>
-    // <form>
+    <ActionForm action=add_text on:submit=on_submit>
       <div class="col-md-9">
         <label for="title" class="form-label">Title</label>
-        <input type="text" id="title" name="text[title]" class="form-control" required="true"
-            // prop:value={title.get_untracked()}
-            // on:input=move |ev| {
-            //   set_title(event_target_value(&ev));
-            //   if title().is_empty() {
-            //     logging::log!("{:?} {} {}", ev, title(), title().is_empty());
-            //   }
-            // }
-            on:blur=move |ev| {
-              set_title(event_target_value(&ev));
-              // logging::log!("{:?} {}", ev, title());
+        <input type="text" id="title" name="text[title]" class="form-control"
+            on:change:target=move |ev| {
+              set_title.set(ev.target().value());
             }
-            // on:blur:target=move |ev| {
-            //   // .value() returns the current value of an HTML input element
-            //   set_title(ev.target().value());
-            //   // logging::log!("{}", title());
-            // }
+            prop:value=title
         />
         <Show
-          when=move || title().is_empty()
+          when=move || error_title().is_some()
           fallback=|| ().into_any()
         >
-          // <div class:invalid-feedback=move || title().is_empty()>
           <div class="error">
             "Please enter a title"
           </div>
@@ -99,29 +106,33 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
       <div class="col-md-9">
         <label for="content" class="form-label">Content</label>
-        <textarea id="content" name="text[content]" required="true" class="form-control" rows="10"
-          // prop:value=content.get_untracked()
-          // on:blur:target=move|ev|set_content(ev.target().value())
-          on:blur=move|ev|set_content(event_target_value(&ev))
+        <textarea id="content" name="text[content]" class="form-control" rows="10"
+          on:change=move|ev|set_content.set(event_target_value(&ev))
         >
           {content.get_untracked()}
         </textarea>
         <Show
-          when=move || content().is_empty()
+          when=move || error_content().is_some()
           fallback=|| ().into_any()
         >
           <div class="error">
             "Please enter content"
           </div>
-      </Show>
+        </Show>
       </div>
 
       <div class="col-md-9">
-        <input type="checkbox" id="published" name="text[published]" checked={published.get_untracked()} class="ml-2"
+        <input type="checkbox" id="published" checked={move || published() == "true"} class="ml-2"
           on:change:target=move|ev|{
-            set_published(ev.target().checked());
+            set_published(if ev.target().checked() {"true"} else {"false"});
           } />
         <label for="published" class="form-label mx-1">Published</label>
+        <input
+            type="text"
+            name="text[published]"
+            hidden
+            value=published
+        />
       </div>
 
       <Show
@@ -138,12 +149,7 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
 
       <div class="col-12 pt-3 mb-5">
-        // <button type="submit" class="btn btn-primary me-2" on:click:target= move |ev| move async{
-        //     add(title(), content(), published()).await;
-        // }>
-        //   Save
-        // </button>
-        <input type="submit" class="btn btn-primary me-2" value="Save"/>
+        <input type="submit" class="btn btn-primary me-2" value="Save" />
         <button type="button" class="btn btn-outline-danger"
             on:click:target= move |ev|{
             logging::log!("click {}", ev.target().to_string());
@@ -152,9 +158,8 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         </button>
       </div>
     </ActionForm>
-    // </form>
 
-    {create_modal(title())}
+    {create_modal(title.get_untracked())}
 
     // {status === 'success' &&
     //   <div className="alert alert-success mb-5">
@@ -168,7 +173,6 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
 
         }
-    .into_view()
 }
 
 #[component]

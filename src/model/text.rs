@@ -61,6 +61,19 @@ pub async fn add(text: NewText) -> Result<Uuid, ServerFnError> {
         .map_err(|e| ServerFnError::new(format!("Problem while adding text {}", e)))
 }
 
+#[server(Update)]
+pub async fn update(text: Text) -> Result<Text, ServerFnError> {
+    let pool = db().await?;
+    let new_text = NewText {
+        title: text.title,
+        content: text.content,
+        published: text.published,
+    };
+    Text::update(text.id, new_text, &pool)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Problem while updating text {} {}", text.id, e)))
+}
+
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 // #[new(derive(Deserialize, Clone))]
 pub struct Text {
@@ -74,7 +87,8 @@ pub struct Text {
 pub struct NewText {
     pub title: String,
     pub content: String,
-    pub published: String,
+    #[serde(default)]
+    pub published: bool,
 }
 
 // #[derive(Debug, Snafu)]
@@ -137,7 +151,7 @@ impl Text {
             "#,
             text.title,
             text.content,
-            text.published == "on",
+            text.published,
         )
         .fetch_one(db)
         .await?
@@ -156,7 +170,7 @@ impl Text {
             id,
             text.title,
             text.content,
-            text.published == "on",
+            text.published,
         )
         .fetch_one(db)
         .await

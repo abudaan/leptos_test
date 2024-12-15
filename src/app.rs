@@ -1,5 +1,6 @@
 use crate::component::text_form::TextForm;
 use crate::database::AppState;
+use crate::model::text::Add;
 use leptos::prelude::*;
 use leptos::*;
 use leptos_meta::MetaTags;
@@ -72,11 +73,11 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("/") view=TextForm/>
                     <Route path=path!("/:id") view=TextForm/>
                 </ParentRoute>
+                <Route path=path!("test") view=Test/>
 
 
                 // <Route path=path!("text-form/:id?") view=TextForm/>
                 // <Route path=path!("text-form/:id") view=TextForm/>
-                // <Route path=path!("text-form/:id") view=TextForm2/>
             </Routes>
 
         </Router>
@@ -98,6 +99,37 @@ fn HomePage() -> impl IntoView {
     }
 }
 
+fn create_test_view(t: Option<String>) -> impl IntoView {
+    let add_text = ServerAction::<Add>::new();
+    let (name, set_name) = signal(String::new());
+    if let Some(t) = t {
+        set_name.set(t);
+    }
+    view! {
+        <ActionForm  action=add_text>
+        <input type="text"
+        // adding :target gives us typed access to the element
+        // that is the target of the event that fires
+        on:input:target=move |ev| {
+            // .value() returns the current value of an HTML input element
+            set_name.set(ev.target().value());
+        }
+
+        // the `prop:` syntax lets you update a DOM property,
+        // rather than an attribute.
+        prop:value=name
+        />
+        <p>"Name is: " {name}</p>
+        </ActionForm>
+    }
+}
+
+#[component]
+fn Test() -> impl IntoView {
+    // create_test_view(None)
+    create_test_view(Some("Aap en Beer".to_string()))
+}
+
 #[component]
 fn TextForm2() -> impl IntoView {
     if let Some(state) = use_context::<AppState>() {
@@ -111,7 +143,7 @@ fn TextForm2() -> impl IntoView {
 }
 
 #[component]
-pub fn Test() -> impl IntoView {
+pub fn Test2() -> impl IntoView {
     let data = if cfg!(target_arch = "wasm32") {
         logging::log!("where do I run??? {}", cfg!(target_arch = "wasm32"));
         vec![0, 1, 2]
