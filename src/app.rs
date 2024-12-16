@@ -1,5 +1,7 @@
 use crate::component::text_form::TextForm;
 use crate::database::AppState;
+use crate::error_template::ErrorTemplate;
+use crate::model::test::Test;
 use crate::model::text::Add;
 use leptos::prelude::*;
 use leptos::*;
@@ -74,6 +76,7 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("/:id") view=TextForm/>
                 </ParentRoute>
                 <Route path=path!("test") view=Test/>
+                <Route path=path!("test1") view=Test1/>
 
 
                 // <Route path=path!("text-form/:id?") view=TextForm/>
@@ -129,6 +132,60 @@ fn Test() -> impl IntoView {
     // create_test_view(None)
     create_test_view(Some("Aap en Beer".to_string()))
 }
+
+#[component]
+fn Test1() -> impl IntoView {
+    let test_action = ServerAction::<Test>::new();
+
+    let action_value = Signal::derive(move || {
+        let r = test_action.value().get();
+        if let Some(r) = r {
+            match r {
+                Err(error) => error.to_string(),
+                Ok(value) => value,
+            }
+        } else {
+            String::new()
+        }
+    });
+
+    let (error, set_error) = signal("".to_string());
+
+    // let derived_signal_double_count = move || value.get();
+    // derived_signal_double_count.set("aap".to_string());
+
+    // Effect::new_isomorphic(move |_| {
+    //     logging::log!("Got value = {:?}", value.get());
+    // });
+
+    Effect::watch(
+        move || action_value.get(),
+        move |val, _prev_val, _| {
+            set_error.set(val.to_owned());
+        },
+        false,
+    );
+
+    view! {
+        // <ErrorBoundary
+        //     fallback=move |error| {
+        //         move || format!("{:#?}", error.get())
+        //     }>
+            <pre>{error}</pre>
+            <ActionForm action=test_action>
+                <input type="text" name="value"
+                    on:focus=move|_ev|set_error.set(String::new())
+                />
+                <button type="submit">"Submit"</button>
+            </ActionForm>
+        // </ErrorBoundary>
+    }
+}
+
+// #[component]
+// pub fn ReturnsError() -> impl IntoView {
+//     Err::<String, AppError>(AppError::InternalServerError)
+// }
 
 #[component]
 fn TextForm2() -> impl IntoView {

@@ -7,6 +7,7 @@
 // mod round;
 // mod stats;
 // mod tag;
+pub mod test;
 pub mod text;
 
 // pub use answer_option::{AnswerOption, NewAnswerOption};

@@ -1,7 +1,5 @@
-use either::Either;
 use leptos::prelude::*;
 use leptos::*;
-use leptos_router::components::Form;
 use leptos_router::hooks::use_params;
 use leptos_router::params::Params;
 use prelude::Read;
@@ -11,8 +9,8 @@ use server::Resource;
 use uuid::Uuid;
 
 use crate::error_template::ErrorTemplate;
+use crate::model::text::get_one;
 use crate::model::text::Add;
-use crate::model::text::{add, get_one};
 use crate::model::Text;
 
 #[derive(Params, PartialEq, Serialize, Deserialize)]
@@ -61,22 +59,19 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         new_entry = false;
     }
 
-    let (error_title, set_error_title) = signal(None::<String>);
-    let (error_content, set_error_content) = signal(None::<String>);
+    let (has_error_title, set_error_title) = signal(false);
+    let (has_error_content, set_error_content) = signal(false);
 
     let on_submit = move |ev: ev::SubmitEvent| {
-        // logging::log!("published submit {}", published());
         let data = Add::from_event(&ev);
         let text = data.unwrap().text;
-        logging::log!("title {} {}", text.title, text.title.is_empty());
         if text.title.is_empty() {
-            set_error_title.set(Some("Please enter a title".to_string()));
+            set_error_title.set(true);
             // ev.prevent_default() will prevent form submission
             ev.prevent_default();
         }
         if text.content.is_empty() {
-            set_error_content.set(Some("Please enter content".to_string()));
-            // ev.prevent_default() will prevent form submission
+            set_error_content.set(true);
             ev.prevent_default();
         }
     };
@@ -85,17 +80,16 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
     // class="row g-9" autocomplete="off" novalidate="true"
     let add_text = ServerAction::<Add>::new();
     view! {
-    <ActionForm action=add_text on:submit=on_submit>
+      <ActionForm action=add_text on:submit=on_submit>
       <div class="col-md-9">
         <label for="title" class="form-label">Title</label>
         <input type="text" id="title" name="text[title]" class="form-control"
-            on:change:target=move |ev| {
-              set_title.set(ev.target().value());
-            }
+            on:focus=move |_ev| set_error_title.set(false)
+            on:change:target=move |ev| set_title.set(ev.target().value())
             prop:value=title
         />
         <Show
-          when=move || error_title().is_some()
+          when=has_error_title
           fallback=|| ().into_any()
         >
           <div class="error">
@@ -107,12 +101,13 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
       <div class="col-md-9">
         <label for="content" class="form-label">Content</label>
         <textarea id="content" name="text[content]" class="form-control" rows="10"
+          on:focus=move|_ev|set_error_content.set(false)
           on:change=move|ev|set_content.set(event_target_value(&ev))
         >
           {content.get_untracked()}
         </textarea>
         <Show
-          when=move || error_content().is_some()
+          when=has_error_content
           fallback=|| ().into_any()
         >
           <div class="error">
@@ -123,9 +118,8 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
       <div class="col-md-9">
         <input type="checkbox" id="published" checked={move || published() == "true"} class="ml-2"
-          on:change:target=move|ev|{
-            set_published(if ev.target().checked() {"true"} else {"false"});
-          } />
+          on:change:target=move|ev|set_published(if ev.target().checked() {"true"} else {"false"})
+        />
         <label for="published" class="form-label mx-1">Published</label>
         <input
             type="text"
@@ -149,7 +143,25 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
 
       <div class="col-12 pt-3 mb-5">
-        <input type="submit" class="btn btn-primary me-2" value="Save" />
+        <ErrorBoundary fallback=|errors| {
+          logging::log!("errors {:?}", errors.get());
+
+          view! {
+
+          // <ErrorTemplate errors={errors.into()} />
+            <div class="error">
+                <p>"Errors occurred:"</p>
+                <ul>
+                    {move || errors.get()
+                        .into_iter()
+                        .map(|(_, e)| view! { <li>{e.to_string()}</li> })
+                        .collect_view()
+                    }
+                </ul>
+            </div>
+        }}>
+          <input type="submit" class="btn btn-primary me-2" value="Save" />
+        </ErrorBoundary>
         <button type="button" class="btn btn-outline-danger"
             on:click:target= move |ev|{
             logging::log!("click {}", ev.target().to_string());
@@ -161,10 +173,11 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
     {create_modal(title.get_untracked())}
 
-    // {status === 'success' &&
-    //   <div className="alert alert-success mb-5">
-    //     Saved successfully!
-    //   </div>}
+        // <div class="alert alert-success mb-5">
+        //   Saved successfully!
+        // </div>
+
+
 
     // {status === 'failure' &&
     //   <div className="alert alert-danger mb-5">

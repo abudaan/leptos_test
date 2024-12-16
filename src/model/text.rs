@@ -44,7 +44,7 @@ pub async fn get_all_texts() -> Result<Vec<Text>, ServerFnError> {
         .map_err(|e| ServerFnError::new(format!("Problem while fetching texts: {}", e)))
 }
 
-#[server]
+#[server(GetOne)]
 pub async fn get_one(id: Uuid) -> Result<Text, ServerFnError> {
     // let pool = get_pool().await?;
     let pool = db().await?;
