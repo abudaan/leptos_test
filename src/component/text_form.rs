@@ -62,56 +62,39 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
     let (has_error_title, set_error_title) = signal(false);
     let (has_error_content, set_error_content) = signal(false);
 
-    let on_submit = move |ev: ev::SubmitEvent| {
-        ev.prevent_default();
-        let data = Add::from_event(&ev);
-        let text = data.unwrap().text;
-        // logging::log!(
-        //     "title: {} content: {}",
-        //     text.title.is_empty(),
-        //     text.content.is_empty()
-        // );
-        if text.title.is_empty() {
-            set_error_title.set(true);
-        }
-        if text.content.is_empty() {
-            set_error_content.set(true);
-        }
-    };
-
-    // logging::log!("{} {} {}", title, published, content);
-    // class="row g-9" autocomplete="off" novalidate="true"
     let add_text = ServerAction::<Add>::new();
-    // let action_value = Signal::derive(move || {
-    //     let r = add_text.value().get();
-    //     if let Some(r) = r {
-    //         match r {
-    //             Err(error) => (true, error.to_string()),
-    //             Ok(value) => (false, format!("New text saved with id {}", value)),
-    //         }
-    //     } else {
-    //         (false, String::new())
-    //     }
-    // });
-    // // let (server_message, set_server_message) = signal(action_value());
+    let action_value = Signal::derive(move || {
+        let r = add_text.value().get();
+        if let Some(r) = r {
+            match r {
+                Err(error) => error.to_string(),
+                Ok(value) => value,
+            }
+        } else {
+            String::new()
+        }
+    });
+
     // Effect::watch(
     //     move || action_value.get(),
     //     move |val, _prev_val, _| {
-    //         logging::log!("{:?}", val.to_owned());
-    //         // set_server_message.set(val.to_owned());
+    //         logging::log!("{}", val);
     //     },
     //     false,
     // );
 
     view! {
         <ActionForm
-          on:submit=on_submit
           action=add_text
         >
         <div class="col-md-9">
           <label for="title" class="form-label">Title</label>
-          <input type="text" id="title" name="text[title]" class="form-control" required="true"
+          <input type="text" id="title" name="text[title]" class="form-control"
               on:focus=move |_ev| set_error_title.set(false)
+              on:blur:target=move |ev| {
+                if ev.target().value().is_empty() {
+                  set_error_title.set(true);
+              }}
               on:change:target=move |ev| set_title.set(ev.target().value())
               prop:value=title
           />
@@ -128,6 +111,10 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         <div class="col-md-9">
           <label for="content" class="form-label">Content</label>
           <textarea id="content" name="text[content]" class="form-control" rows="10"
+            on:blur:target=move|ev|{
+              if ev.target().value().is_empty() {
+                set_error_content.set(true);
+            }}
             on:focus=move|_ev|set_error_content.set(false)
             on:change=move|ev|set_content.set(event_target_value(&ev))
           >
@@ -170,25 +157,6 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
 
         <div class="col-12 pt-3 mb-5">
-          // <ErrorBoundary fallback=|errors| {
-          //   logging::log!("errors {:?}", errors.get());
-
-          //   view! {
-
-          //   // <ErrorTemplate errors={errors.into()} />
-          //     <div class="error">
-          //         <p>"Errors occurred:"</p>
-          //         <ul>
-          //             {move || errors.get()
-          //                 .into_iter()
-          //                 .map(|(_, e)| view! { <li>{e.to_string()}</li> })
-          //                 .collect_view()
-          //             }
-          //         </ul>
-          //     </div>
-          // }}>
-          // <input type="submit" class="btn btn-primary me-2" value="Save" />
-          // </ErrorBoundary>
           <input type="submit" class="btn btn-primary me-2" value="Save" />
           <button type="button" class="btn btn-outline-danger"
               on:click:target= move |ev|{
@@ -199,7 +167,23 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         </div>
       </ActionForm>
 
-      {create_modal(title.get_untracked())}
+      // {create_modal(title.get_untracked())}
+
+      {move || {
+        let msg = action_value.get();
+        logging::log!("{}", msg);
+        if msg.is_empty() {
+            ().into_any()
+        } else if msg == "ok" {
+          view!{<div class="alert alert-success mb-5">
+            "Success!"
+          </div>}.into_any()
+        } else  {
+          view!{<div class="alert alert-danger mb-5">
+            {msg}
+          </div>}.into_any()
+        }
+      }}
 
       // {
       //     let msg = server_message.get();

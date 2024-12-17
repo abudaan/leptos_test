@@ -2,6 +2,7 @@
 use crate::database::ssr::db;
 use crate::{database::AppState, error_template::AppError};
 use leptos::{
+    logging,
     prelude::{use_context, ServerFnError},
     server,
 };
@@ -54,11 +55,28 @@ pub async fn get_one(id: Uuid) -> Result<Text, ServerFnError> {
 }
 
 #[server(Add)]
-pub async fn add(text: NewText) -> Result<Uuid, ServerFnError> {
+pub async fn add(text: NewText) -> Result<String, ServerFnError> {
     let pool = db().await?;
-    Text::add(text, &pool)
-        .await
-        .map_err(|e| ServerFnError::new(format!("Problem while adding text {}", e)))
+    logging::log!(
+        "add {} {}",
+        text.title,
+        text.title.is_empty() || text.content.is_empty()
+    );
+    if text.title.is_empty() || text.content.is_empty() {
+        // Err(ServerFnError::new(
+        //     "Please fill out both title and content!",
+        // ))
+        Ok("Please fill out both title and content!".to_string())
+    } else {
+        // Text::add(text, &pool)
+        //     .await
+        //     .map_err(|e| ServerFnError::new(format!("Problem while adding text {}", e)))
+        let r = Text::add(text, &pool).await;
+        match r {
+            Ok(_uuid) => Ok("ok".to_string()),
+            Err(error) => Ok(error.to_string()),
+        }
+    }
 }
 
 #[server(Update)]

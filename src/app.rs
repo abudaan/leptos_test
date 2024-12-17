@@ -7,6 +7,7 @@ use leptos::prelude::*;
 use leptos::*;
 use leptos_meta::MetaTags;
 use leptos_router::components::*;
+use wasm_bindgen::JsCast;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -80,6 +81,7 @@ pub fn App() -> impl IntoView {
                 <Route path=path!("test2") view=Test2 ssr=SsrMode::Async />
                 <Route path=path!("test3") view=Test3/>
                 <Route path=path!("test4") view=Test4/>
+                <Route path=path!("test5") view=Test5/>
 
 
                 // <Route path=path!("text-form/:id?") view=TextForm/>
@@ -228,17 +230,22 @@ fn Test2() -> impl IntoView {
 
 #[component]
 fn Test3() -> impl IntoView {
-    let test_action = ServerAction::<Test>::new();
+    // let test_action = ServerAction::<Test>::new();
     view! {
         <form
+            id="test_form"
+            method="post"
+            action="/api/test"
             on:submit=move |ev| {
                 let data = Test::from_event(&ev).expect("to parse form data");
                 if data.value.is_empty() {
-                // if data.value == "aap" {
                     logging::log!("prevent default");
                     ev.prevent_default();
                 } else {
-                    test_action.dispatch(data);
+                    // test_action.dispatch(data);
+                    let form = document().get_element_by_id("test_form").unwrap();
+                    let form_element = form.dyn_into::<web_sys::HtmlFormElement>().unwrap();
+                    form_element.submit().unwrap();
                 }
             }
         >
@@ -269,6 +276,26 @@ fn Test4() -> impl IntoView {
             <pre>{action_value}</pre>
             <input type="submit" value="Submit"/>
         </ActionForm>
+    }
+}
+
+#[component]
+fn Test5() -> impl IntoView {
+    let test_action = ServerAction::<Test>::new();
+
+    view! {
+        <ErrorBoundary
+            fallback=move |error| {
+                logging::log!("error {:?}", error.get());
+                view!{<div>"ERROR"</div>}
+            }>
+            <ActionForm
+                action=test_action
+            >
+                <input type="text" name="value"/>
+                <input type="submit" value="Submit"/>
+            </ActionForm>
+        </ErrorBoundary>
     }
 }
 
