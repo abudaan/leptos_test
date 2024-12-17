@@ -63,129 +63,157 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
     let (has_error_content, set_error_content) = signal(false);
 
     let on_submit = move |ev: ev::SubmitEvent| {
+        ev.prevent_default();
         let data = Add::from_event(&ev);
         let text = data.unwrap().text;
+        // logging::log!(
+        //     "title: {} content: {}",
+        //     text.title.is_empty(),
+        //     text.content.is_empty()
+        // );
         if text.title.is_empty() {
             set_error_title.set(true);
-            // ev.prevent_default() will prevent form submission
-            ev.prevent_default();
         }
         if text.content.is_empty() {
             set_error_content.set(true);
-            ev.prevent_default();
         }
     };
 
     // logging::log!("{} {} {}", title, published, content);
     // class="row g-9" autocomplete="off" novalidate="true"
     let add_text = ServerAction::<Add>::new();
+    // let action_value = Signal::derive(move || {
+    //     let r = add_text.value().get();
+    //     if let Some(r) = r {
+    //         match r {
+    //             Err(error) => (true, error.to_string()),
+    //             Ok(value) => (false, format!("New text saved with id {}", value)),
+    //         }
+    //     } else {
+    //         (false, String::new())
+    //     }
+    // });
+    // // let (server_message, set_server_message) = signal(action_value());
+    // Effect::watch(
+    //     move || action_value.get(),
+    //     move |val, _prev_val, _| {
+    //         logging::log!("{:?}", val.to_owned());
+    //         // set_server_message.set(val.to_owned());
+    //     },
+    //     false,
+    // );
+
     view! {
-      <ActionForm action=add_text on:submit=on_submit>
-      <div class="col-md-9">
-        <label for="title" class="form-label">Title</label>
-        <input type="text" id="title" name="text[title]" class="form-control"
-            on:focus=move |_ev| set_error_title.set(false)
-            on:change:target=move |ev| set_title.set(ev.target().value())
-            prop:value=title
-        />
+        <ActionForm
+          on:submit=on_submit
+          action=add_text
+        >
+        <div class="col-md-9">
+          <label for="title" class="form-label">Title</label>
+          <input type="text" id="title" name="text[title]" class="form-control" required="true"
+              on:focus=move |_ev| set_error_title.set(false)
+              on:change:target=move |ev| set_title.set(ev.target().value())
+              prop:value=title
+          />
+          <Show
+            when=has_error_title
+            fallback=|| ().into_any()
+          >
+            <div class="error">
+              "Please enter a title"
+            </div>
+          </Show>
+        </div>
+
+        <div class="col-md-9">
+          <label for="content" class="form-label">Content</label>
+          <textarea id="content" name="text[content]" class="form-control" rows="10"
+            on:focus=move|_ev|set_error_content.set(false)
+            on:change=move|ev|set_content.set(event_target_value(&ev))
+          >
+            {content.get_untracked()}
+          </textarea>
+          <Show
+            when=has_error_content
+            fallback=|| ().into_any()
+          >
+            <div class="error">
+              "Please enter content"
+            </div>
+          </Show>
+        </div>
+
+        <div class="col-md-9">
+          <input type="checkbox" id="published" checked={move || published() == "true"} class="ml-2"
+            on:change:target=move|ev|set_published(if ev.target().checked() {"true"} else {"false"})
+          />
+          <label for="published" class="form-label mx-1">Published</label>
+          <input
+              type="text"
+              name="text[published]"
+              hidden
+              value=published
+          />
+        </div>
+
         <Show
-          when=has_error_title
+          when=move || !new_entry
           fallback=|| ().into_any()
         >
-          <div class="error">
-            "Please enter a title"
+          <div class="col-12">
+            <button class="btn btn-outline-danger me-2" type="button"
+              data-bs-toggle="modal" data-bs-target="#deleteTextModal">
+              Delete text
+            </button>
           </div>
         </Show>
-      </div>
 
-      <div class="col-md-9">
-        <label for="content" class="form-label">Content</label>
-        <textarea id="content" name="text[content]" class="form-control" rows="10"
-          on:focus=move|_ev|set_error_content.set(false)
-          on:change=move|ev|set_content.set(event_target_value(&ev))
-        >
-          {content.get_untracked()}
-        </textarea>
-        <Show
-          when=has_error_content
-          fallback=|| ().into_any()
-        >
-          <div class="error">
-            "Please enter content"
-          </div>
-        </Show>
-      </div>
 
-      <div class="col-md-9">
-        <input type="checkbox" id="published" checked={move || published() == "true"} class="ml-2"
-          on:change:target=move|ev|set_published(if ev.target().checked() {"true"} else {"false"})
-        />
-        <label for="published" class="form-label mx-1">Published</label>
-        <input
-            type="text"
-            name="text[published]"
-            hidden
-            value=published
-        />
-      </div>
+        <div class="col-12 pt-3 mb-5">
+          // <ErrorBoundary fallback=|errors| {
+          //   logging::log!("errors {:?}", errors.get());
 
-      <Show
-        when=move || !new_entry
-        fallback=|| ().into_any()
-      >
-        <div class="col-12">
-          <button class="btn btn-outline-danger me-2" type="button"
-            data-bs-toggle="modal" data-bs-target="#deleteTextModal">
-            Delete text
+          //   view! {
+
+          //   // <ErrorTemplate errors={errors.into()} />
+          //     <div class="error">
+          //         <p>"Errors occurred:"</p>
+          //         <ul>
+          //             {move || errors.get()
+          //                 .into_iter()
+          //                 .map(|(_, e)| view! { <li>{e.to_string()}</li> })
+          //                 .collect_view()
+          //             }
+          //         </ul>
+          //     </div>
+          // }}>
+          // <input type="submit" class="btn btn-primary me-2" value="Save" />
+          // </ErrorBoundary>
+          <input type="submit" class="btn btn-primary me-2" value="Save" />
+          <button type="button" class="btn btn-outline-danger"
+              on:click:target= move |ev|{
+              logging::log!("click {}", ev.target().to_string());
+          }
+          >Cancel
           </button>
         </div>
-      </Show>
+      </ActionForm>
 
+      {create_modal(title.get_untracked())}
 
-      <div class="col-12 pt-3 mb-5">
-        <ErrorBoundary fallback=|errors| {
-          logging::log!("errors {:?}", errors.get());
-
-          view! {
-
-          // <ErrorTemplate errors={errors.into()} />
-            <div class="error">
-                <p>"Errors occurred:"</p>
-                <ul>
-                    {move || errors.get()
-                        .into_iter()
-                        .map(|(_, e)| view! { <li>{e.to_string()}</li> })
-                        .collect_view()
-                    }
-                </ul>
-            </div>
-        }}>
-          <input type="submit" class="btn btn-primary me-2" value="Save" />
-        </ErrorBoundary>
-        <button type="button" class="btn btn-outline-danger"
-            on:click:target= move |ev|{
-            logging::log!("click {}", ev.target().to_string());
-        }
-        >Cancel
-        </button>
-      </div>
-    </ActionForm>
-
-    {create_modal(title.get_untracked())}
-
-        // <div class="alert alert-success mb-5">
-        //   Saved successfully!
-        // </div>
-
-
-
-    // {status === 'failure' &&
-    //   <div className="alert alert-danger mb-5">
-    //     Something went wrong!
-    //   </div>}
-
-
-        }
+      // {
+      //     let msg = server_message.get();
+      //     if msg.0 {
+      //         view!{<div class="alert alert-danger mb-5">
+      //           {msg.1}
+      //         </div>}.into_any()
+      //     } else {
+      //       view!{<div class="alert alert-success mb-5">
+      //         {msg.1}
+      //       </div>}.into_any()
+      //     }
+      // }
+    }
 }
 
 #[component]

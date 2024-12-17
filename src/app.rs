@@ -77,6 +77,9 @@ pub fn App() -> impl IntoView {
                 </ParentRoute>
                 <Route path=path!("test") view=Test/>
                 <Route path=path!("test1") view=Test1/>
+                <Route path=path!("test2") view=Test2 ssr=SsrMode::Async />
+                <Route path=path!("test3") view=Test3/>
+                <Route path=path!("test4") view=Test4/>
 
 
                 // <Route path=path!("text-form/:id?") view=TextForm/>
@@ -202,6 +205,73 @@ fn Test1() -> impl IntoView {
     }
 }
 
+#[component]
+fn Test2() -> impl IntoView {
+    let test_action = ServerAction::<Test>::new();
+    view! {
+        <ActionForm
+            on:submit=move |ev| {
+                let data = Test::from_event(&ev).expect("to parse form data");
+                if data.value.is_empty() {
+                // if data.value == "aap" {
+                    logging::log!("prevent default");
+                    ev.prevent_default();
+                }
+            }
+            action=test_action
+        >
+            <input type="text" name="value" required="true"/>
+            <input type="submit" value="Submit"/>
+        </ActionForm>
+    }
+}
+
+#[component]
+fn Test3() -> impl IntoView {
+    let test_action = ServerAction::<Test>::new();
+    view! {
+        <form
+            on:submit=move |ev| {
+                let data = Test::from_event(&ev).expect("to parse form data");
+                if data.value.is_empty() {
+                // if data.value == "aap" {
+                    logging::log!("prevent default");
+                    ev.prevent_default();
+                } else {
+                    test_action.dispatch(data);
+                }
+            }
+        >
+            <input type="text" name="value"/>
+            <input type="submit" value="Submit"/>
+        </form>
+    }
+}
+
+#[component]
+fn Test4() -> impl IntoView {
+    let test_action = ServerAction::<Test>::new();
+    let action_value = Signal::derive(move || {
+        let r = test_action.value().get();
+        if let Some(r) = r {
+            match r {
+                Err(error) => error.to_string(),
+                Ok(value) => value,
+            }
+        } else {
+            String::new()
+        }
+    });
+
+    view! {
+        <ActionForm action=test_action>
+            <input type="text" name="value"/>
+            <pre>{action_value}</pre>
+            <input type="submit" value="Submit"/>
+        </ActionForm>
+    }
+}
+
 // #[component]
 // pub fn ReturnsError() -> impl IntoView {
 //     Err::<String, AppError>(AppError::InternalServerError)
@@ -220,7 +290,7 @@ fn TextForm2() -> impl IntoView {
 }
 
 #[component]
-pub fn Test2() -> impl IntoView {
+pub fn Test200() -> impl IntoView {
     let data = if cfg!(target_arch = "wasm32") {
         logging::log!("where do I run??? {}", cfg!(target_arch = "wasm32"));
         vec![0, 1, 2]
