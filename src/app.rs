@@ -6,7 +6,6 @@ use crate::component::test4::Test4;
 use crate::component::test5::Test5;
 use crate::component::text_form::TextForm;
 use leptos::prelude::*;
-use leptos::*;
 use leptos_meta::MetaTags;
 use leptos_router::components::*;
 
@@ -43,24 +42,6 @@ pub fn App() -> impl IntoView {
     view! {
         <main>
         <Router>
-
-        // <Suspense fallback = move || {
-        //     view!{<div>"Trying to connect to the database..."</div>}.into_view()
-        // }>
-        // {
-        //     db.get().map(|data| match data {
-        //         Ok(value) => view!{
-        //             <div>"Connected to database: " {value}</div>
-        //             <Routes>
-        //                 <Route path="" view=HomePage/>
-        //                 <Route path="texts" view=TextTable/>
-        //             </Routes>
-        //         }.into_view(),
-        //         Err(error) => view!{<div>{error.to_string()}</div>}.into_view()
-        //     })
-        // }
-        // </Suspense>
-
             <Routes fallback=|| {
                 let mut outside_errors = Errors::default();
                 outside_errors.insert_with_default_key(AppError::NotFound);
@@ -81,7 +62,6 @@ pub fn App() -> impl IntoView {
                 <Route path=path!("test4") view=Test4/>
                 <Route path=path!("test5") view=Test5/>
             </Routes>
-
         </Router>
         </main>
     }

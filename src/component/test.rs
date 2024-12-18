@@ -1,8 +1,17 @@
 use leptos::{logging, prelude::*};
 use leptos::{server::ServerAction, IntoView};
+#[cfg(feature = "ssr")]
+use sqlx::PgPool;
 
-use crate::database::AppState;
 use crate::model::text::Add;
+
+#[derive(Clone, Debug)]
+pub struct AppState {
+    pub db_error: Option<String>,
+    pub db_connected: bool,
+    #[cfg(feature = "ssr")]
+    pub pool: Option<PgPool>,
+}
 
 fn create_test_view(t: Option<String>) -> impl IntoView {
     let add_text = ServerAction::<Add>::new();

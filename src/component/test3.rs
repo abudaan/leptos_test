@@ -1,4 +1,4 @@
-use leptos::{ev, logging, prelude::*};
+use leptos::{logging, prelude::*};
 use leptos::{server::ServerAction, IntoView};
 use leptos_router::components::Form;
 use wasm_bindgen::JsCast;
@@ -7,7 +7,7 @@ use crate::model::test::Test;
 
 #[component]
 pub fn Test3() -> impl IntoView {
-    let test_action = ServerAction::<Test>::new();
+    // let test_action = ServerAction::<Test>::new();
     view! {
         <Form
             action="/api/test"
