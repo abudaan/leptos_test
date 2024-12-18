@@ -56,7 +56,6 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
     if let Some(text) = text {
         let text = text.clone();
         id = Some(text.id);
-        // title = text.title.clone();
         content = text.content.clone();
         set_title.set(text.title.clone());
         set_published.set(if text.published { "true" } else { "false" });
@@ -68,6 +67,8 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
     let server_action = ServerAction::<AddOrUpdate>::new();
     let pending = server_action.pending();
     let value = server_action.value();
+
+    let navigate = leptos_router::hooks::use_navigate();
 
     view! {
         <ActionForm
@@ -83,7 +84,6 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
                   set_error_title.set(true);
               }}
               on:change:target=move |ev| set_title.set(ev.target().value())
-
               prop:value=title
           />
           <Show
@@ -142,13 +142,10 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
           </div>
         </Show>
 
-
         <div class="col-12 pt-3 mb-5">
           <input type="submit" class="btn btn-primary me-2" value="Save" />
           <button type="button" class="btn btn-outline-danger"
-              on:click:target= move |ev|{
-              logging::log!("click {}", ev.target().to_string());
-          }
+              on:click:target= move |_ev| navigate("/texts", Default::default())
           >Cancel
           </button>
         </div>

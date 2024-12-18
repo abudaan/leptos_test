@@ -125,7 +125,6 @@ pub fn TextTable() -> impl IntoView {
         <ErrorBoundary fallback=|errors| view! {
             <ErrorTemplate errors={errors.into()} />
         }>
-
             {texts_view}
         </ErrorBoundary>
     </Suspense>
