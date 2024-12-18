@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::error_template::ErrorTemplate;
 use crate::model::text::get_one;
-use crate::model::text::AddOrUpdate;
+use crate::model::text::Add;
 use crate::model::Text;
 
 #[derive(Params, PartialEq, Serialize, Deserialize)]
@@ -46,40 +46,68 @@ fn create_modal(title: String) -> impl IntoView {
     </div>}
 }
 
+fn create_form(text: &Option<Text>) {}
+
 fn create_view(text: &Option<Text>) -> impl IntoView {
-    let mut title = String::new();
-    let mut content = String::new();
+    let (title, set_title) = signal(String::new());
+    let (content, set_content) = signal(String::new());
     let (published, set_published) = signal("false");
     let mut new_entry = true;
-
     if let Some(text) = text {
         let text = text.clone();
-        title = text.title.clone();
-        content = text.content.clone();
+        set_title.set(text.title.clone());
+        set_content.set(text.content.clone());
         set_published.set(if text.published { "true" } else { "false" });
         new_entry = false;
     }
 
+    // let (show_server_message, set_show_server_message) = signal(false);
     let (has_error_title, set_error_title) = signal(false);
     let (has_error_content, set_error_content) = signal(false);
 
-    let server_action = ServerAction::<AddOrUpdate>::new();
-    let pending = server_action.pending();
-    let value = server_action.value();
+    let add_text = ServerAction::<Add>::new();
+    let pending = add_text.pending();
+    let value = add_text.value();
+
+    // let action_value = Signal::derive(move || {
+    //     let r = add_text.value().get();
+    //     if let Some(r) = r {
+    //         // ooops!
+    //         // set_show_server_message.set(true);
+    //         match r {
+    //             Err(error) => error.to_string(),
+    //             Ok(value) => value,
+    //         }
+    //     } else {
+    //         String::new()
+    //     }
+    // });
+
+    // Effect::watch(
+    //     move || action_value.get(),
+    //     move |val, _prev_val, _| {
+    //         logging::log!("{}", val);
+    //     },
+    //     false,
+    // );
 
     view! {
         <ActionForm
-          action=server_action
+          action=add_text
           on:submit=move|ev|ev.prevent_default()
         >
         <div class="col-md-9">
           <label for="title" class="form-label">Title</label>
           <input type="text" id="title" name="text[title]" class="form-control"
-              on:focus=move |_ev| set_error_title.set(false)
+              on:focus=move |_ev| {
+                set_error_title.set(false);
+                // set_show_server_message.set(false);
+              }
               on:blur:target=move |ev| {
                 if ev.target().value().is_empty() {
                   set_error_title.set(true);
               }}
+              on:change:target=move |ev| set_title.set(ev.target().value())
               prop:value=title
           />
           <Show
@@ -99,9 +127,13 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
               if ev.target().value().is_empty() {
                 set_error_content.set(true);
             }}
-            on:focus=move|_ev|set_error_content.set(false)
+            on:focus=move|_ev|{
+              set_error_content.set(false);
+              // set_show_server_message.set(false);
+            }
+            on:change=move|ev|set_content.set(event_target_value(&ev))
           >
-            {content}
+            {content.get_untracked()}
           </textarea>
           <Show
             when=has_error_content
@@ -152,6 +184,26 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
       // {create_modal(title.get_untracked())}
 
+      {move || {
+        // if !show_server_message.get() {
+        //   ().into_any()
+        // }else {
+          // let msg = action_value.get();
+          // logging::log!("{}", msg);
+          // if msg.is_empty() {
+          //     ().into_any()
+          // } else if msg == "ok" {
+          //   view!{<div class="alert alert-success mb-5">
+          //     "Success!"
+          //   </div>}.into_any()
+          // } else  {
+          //   view!{<div class="alert alert-danger mb-5">
+          //     {msg}
+          //   </div>}.into_any()
+          // }
+        // }
+      }}
+
       <div>
         {move || pending().then(|| view!{<div class="alert alert-success mb-5">
             "Loading..."
@@ -175,6 +227,19 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
               </div>}.into_any()
             })}
       </div>
+
+      // {
+      //     let msg = server_message.get();
+      //     if msg.0 {
+      //         view!{<div class="alert alert-danger mb-5">
+      //           {msg.1}
+      //         </div>}.into_any()
+      //     } else {
+      //       view!{<div class="alert alert-success mb-5">
+      //         {msg.1}
+      //       </div>}.into_any()
+      //     }
+      // }
     }
 }
 
@@ -230,3 +295,37 @@ pub fn TextForm() -> impl IntoView {
     }
     .into_any()
 }
+
+// let mut title = "".to_string();
+// let mut published = true;
+// text.get().map(|r| {
+//     if let Ok(o) = r {
+//         if let Some(text) = o {
+//             title = text.title;
+//             published = text.published;
+//         }
+//     }
+// });
+
+// if let Some(r) = text.get() {
+//     if let Ok(o) = r {
+//         if let Some(text) = o {
+//             title = text.title;
+//             published = text.published;
+//         };
+//     }
+// }
+
+// fn func(opt: Option<Result<u64, String>>) {
+//     let n = match opt {
+//         Some(Ok(n)) => n,
+//         _ => return,
+//     };
+// }
+
+// fn func2(res: Result<Option<Text>, String>) {
+//     let n = match res {
+//         Ok(Some(n)) => n,
+//         _ => return,
+//     };
+// }

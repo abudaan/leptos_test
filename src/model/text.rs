@@ -54,6 +54,21 @@ pub async fn get_one(id: Uuid) -> Result<Text, ServerFnError> {
         .map_err(|e| ServerFnError::new(format!("Problem while fetching text {} {}", id, e)))
 }
 
+#[server(AddOrUpdate)]
+pub async fn add_or_update(text: NewText) -> Result<String, ServerFnError> {
+    if let Some(uuid) = text.id {
+        update(Text {
+            id: uuid,
+            title: text.title,
+            content: text.content,
+            published: text.published,
+        })
+        .await
+    } else {
+        add(text).await
+    }
+}
+
 #[server(Add)]
 pub async fn add(text: NewText) -> Result<String, ServerFnError> {
     let pool = db().await?;
@@ -80,16 +95,16 @@ pub async fn add(text: NewText) -> Result<String, ServerFnError> {
 }
 
 #[server(Update)]
-pub async fn update(text: Text) -> Result<Text, ServerFnError> {
+pub async fn update(text: Text) -> Result<String, ServerFnError> {
     let pool = db().await?;
-    let new_text = NewText {
-        title: text.title,
-        content: text.content,
-        published: text.published,
-    };
-    Text::update(text.id, new_text, &pool)
-        .await
-        .map_err(|e| ServerFnError::new(format!("Problem while updating text {} {}", text.id, e)))
+    // Text::update(&text, &pool)
+    //     .await
+    //     .map_err(|e| ServerFnError::new(format!("Problem while updating text {} {}", text.id, e)))
+    let r = Text::update(&text, &pool).await;
+    match r {
+        Ok(_uuid) => Ok("ok".to_string()),
+        Err(error) => Ok(error.to_string()),
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
@@ -99,10 +114,12 @@ pub struct Text {
     pub id: Uuid,
     pub title: String,
     pub content: String,
+    #[serde(default)]
     pub published: bool,
 }
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct NewText {
+    pub id: Option<Uuid>,
     pub title: String,
     pub content: String,
     #[serde(default)]
@@ -176,7 +193,7 @@ impl Text {
         .id)
     }
 
-    async fn update(id: Uuid, text: NewText, db: &PgPool) -> Result<Self, sqlx::Error> {
+    async fn update(text: &Text, db: &PgPool) -> Result<Self, sqlx::Error> {
         sqlx::query_as!(
             Text,
             r#"
@@ -185,7 +202,7 @@ impl Text {
             WHERE id = $1
             RETURNING *
             "#,
-            id,
+            text.id,
             text.title,
             text.content,
             text.published,
