@@ -57,11 +57,11 @@ pub async fn get_one(id: Uuid) -> Result<Text, ServerFnError> {
 #[server(Add)]
 pub async fn add(text: NewText) -> Result<String, ServerFnError> {
     let pool = db().await?;
-    logging::log!(
-        "add {} {}",
-        text.title,
-        text.title.is_empty() || text.content.is_empty()
-    );
+    // logging::log!(
+    //     "add {} {}",
+    //     text.title,
+    //     text.title.is_empty() || text.content.is_empty()
+    // );
     if text.title.is_empty() || text.content.is_empty() {
         // Err(ServerFnError::new(
         //     "Please fill out both title and content!",

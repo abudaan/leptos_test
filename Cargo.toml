@@ -57,6 +57,7 @@ ssr = [
 version = "0.3"
 features = [
   "HtmlInputElement",
+  "HtmlFormElement",
   "InputEvent"
 ]
 

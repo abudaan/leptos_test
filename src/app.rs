@@ -230,28 +230,28 @@ fn Test2() -> impl IntoView {
 
 #[component]
 fn Test3() -> impl IntoView {
-    // let test_action = ServerAction::<Test>::new();
+    let test_action = ServerAction::<Test>::new();
     view! {
-        <form
-            id="test_form"
-            method="post"
+        <Form
             action="/api/test"
+            method="post"
             on:submit=move |ev| {
                 let data = Test::from_event(&ev).expect("to parse form data");
                 if data.value.is_empty() {
                     logging::log!("prevent default");
                     ev.prevent_default();
                 } else {
+
                     // test_action.dispatch(data);
-                    let form = document().get_element_by_id("test_form").unwrap();
-                    let form_element = form.dyn_into::<web_sys::HtmlFormElement>().unwrap();
+                    let form = ev.target();
+                    let form_element = form.unwrap().dyn_into::<web_sys::HtmlFormElement>().unwrap();
                     form_element.submit().unwrap();
                 }
             }
         >
             <input type="text" name="value"/>
             <input type="submit" value="Submit"/>
-        </form>
+        </Form>
     }
 }
 

@@ -59,21 +59,27 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         new_entry = false;
     }
 
+    // let (show_server_message, set_show_server_message) = signal(false);
     let (has_error_title, set_error_title) = signal(false);
     let (has_error_content, set_error_content) = signal(false);
 
     let add_text = ServerAction::<Add>::new();
-    let action_value = Signal::derive(move || {
-        let r = add_text.value().get();
-        if let Some(r) = r {
-            match r {
-                Err(error) => error.to_string(),
-                Ok(value) => value,
-            }
-        } else {
-            String::new()
-        }
-    });
+    let pending = add_text.pending();
+    let value = add_text.value();
+
+    // let action_value = Signal::derive(move || {
+    //     let r = add_text.value().get();
+    //     if let Some(r) = r {
+    //         // ooops!
+    //         // set_show_server_message.set(true);
+    //         match r {
+    //             Err(error) => error.to_string(),
+    //             Ok(value) => value,
+    //         }
+    //     } else {
+    //         String::new()
+    //     }
+    // });
 
     // Effect::watch(
     //     move || action_value.get(),
@@ -86,11 +92,15 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
     view! {
         <ActionForm
           action=add_text
+          on:submit=move|ev|ev.prevent_default()
         >
         <div class="col-md-9">
           <label for="title" class="form-label">Title</label>
           <input type="text" id="title" name="text[title]" class="form-control"
-              on:focus=move |_ev| set_error_title.set(false)
+              on:focus=move |_ev| {
+                set_error_title.set(false);
+                // set_show_server_message.set(false);
+              }
               on:blur:target=move |ev| {
                 if ev.target().value().is_empty() {
                   set_error_title.set(true);
@@ -115,7 +125,10 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
               if ev.target().value().is_empty() {
                 set_error_content.set(true);
             }}
-            on:focus=move|_ev|set_error_content.set(false)
+            on:focus=move|_ev|{
+              set_error_content.set(false);
+              // set_show_server_message.set(false);
+            }
             on:change=move|ev|set_content.set(event_target_value(&ev))
           >
             {content.get_untracked()}
@@ -170,20 +183,48 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
       // {create_modal(title.get_untracked())}
 
       {move || {
-        let msg = action_value.get();
-        logging::log!("{}", msg);
-        if msg.is_empty() {
-            ().into_any()
-        } else if msg == "ok" {
-          view!{<div class="alert alert-success mb-5">
-            "Success!"
-          </div>}.into_any()
-        } else  {
-          view!{<div class="alert alert-danger mb-5">
-            {msg}
-          </div>}.into_any()
-        }
+        // if !show_server_message.get() {
+        //   ().into_any()
+        // }else {
+          // let msg = action_value.get();
+          // logging::log!("{}", msg);
+          // if msg.is_empty() {
+          //     ().into_any()
+          // } else if msg == "ok" {
+          //   view!{<div class="alert alert-success mb-5">
+          //     "Success!"
+          //   </div>}.into_any()
+          // } else  {
+          //   view!{<div class="alert alert-danger mb-5">
+          //     {msg}
+          //   </div>}.into_any()
+          // }
+        // }
       }}
+
+      <div>
+        {move || pending().then(|| view!{<div class="alert alert-success mb-5">
+            "Loading..."
+          </div>}.into_any())}
+        {move || value().map(|result| match result {
+            Ok(msg) => {
+              if msg.is_empty() {
+                  ().into_any()
+              } else if msg == "ok" {
+                view!{<div class="alert alert-success mb-5">
+                  "Success!"
+                </div>}.into_any()
+              } else  {
+                view!{<div class="alert alert-danger mb-5">
+                  {msg}
+                </div>}.into_any()
+              }
+            },
+            Err(e) => view!{<div class="alert alert-danger mb-5">
+                {e.to_string()}
+              </div>}.into_any()
+            })}
+      </div>
 
       // {
       //     let msg = server_message.get();
