@@ -18,7 +18,7 @@ struct TextParams {
     id: Option<Uuid>,
 }
 
-fn create_modal(title: &String, id: Uuid) -> impl IntoView {
+fn create_modal(title: String, id: Uuid) -> impl IntoView {
     let navigate = leptos_router::hooks::use_navigate();
     let server_action = ServerAction::<Delete>::new();
     view! {
@@ -30,7 +30,7 @@ fn create_modal(title: &String, id: Uuid) -> impl IntoView {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p>Are you sure that you want to delete the text <b>{title.to_owned()}</b>?</p>
+            <p>Are you sure that you want to delete the text <b>{title}</b>?</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -49,17 +49,16 @@ fn create_modal(title: &String, id: Uuid) -> impl IntoView {
 
 fn create_view(text: &Option<Text>) -> impl IntoView {
     let mut id: Option<Uuid> = None;
-    let mut title = String::new();
-    let mut title_modal = String::new();
     let mut content = String::new();
+    let (title, set_title) = signal("".to_string());
     let (published, set_published) = signal("false");
 
     if let Some(text) = text {
         let text = text.clone();
         id = Some(text.id);
-        title = text.title.clone();
-        title_modal = text.title.clone();
+        // title = text.title.clone();
         content = text.content.clone();
+        set_title.set(text.title.clone());
         set_published.set(if text.published { "true" } else { "false" });
     }
 
@@ -83,6 +82,8 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
                 if ev.target().value().is_empty() {
                   set_error_title.set(true);
               }}
+              on:change:target=move |ev| set_title.set(ev.target().value())
+
               prop:value=title
           />
           <Show
@@ -155,7 +156,7 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
 
       {move ||
         match id {
-          Some(id) => create_modal(&title_modal, id).into_any(),
+          Some(id) => create_modal(title(), id).into_any(),
           None => ().into_any()
         }
       }
