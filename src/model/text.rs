@@ -107,6 +107,19 @@ pub async fn update(text: Text) -> Result<String, ServerFnError> {
     }
 }
 
+#[server(Delete)]
+pub async fn delete(id: Uuid) -> Result<String, ServerFnError> {
+    let pool = db().await?;
+    // Text::update(&text, &pool)
+    //     .await
+    //     .map_err(|e| ServerFnError::new(format!("Problem while updating text {} {}", text.id, e)))
+    let r = Text::delete(id, &pool).await;
+    match r {
+        Ok(_uuid) => Ok("ok".to_string()),
+        Err(error) => Ok(error.to_string()),
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 // #[new(derive(Deserialize, Clone))]
 pub struct Text {

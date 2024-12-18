@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::error_template::ErrorTemplate;
 use crate::model::text::get_one;
-use crate::model::text::AddOrUpdate;
+use crate::model::text::{AddOrUpdate, Delete};
 use crate::model::Text;
 
 #[derive(Params, PartialEq, Serialize, Deserialize)]
@@ -18,7 +18,9 @@ struct TextParams {
     id: Option<Uuid>,
 }
 
-fn create_modal(title: String) -> impl IntoView {
+fn create_modal(title: &String, id: Uuid) -> impl IntoView {
+    let navigate = leptos_router::hooks::use_navigate();
+    let server_action = ServerAction::<Delete>::new();
     view! {
     <div class="modal" id="deleteTextModal">
       <div class="modal-dialog">
@@ -28,15 +30,14 @@ fn create_modal(title: String) -> impl IntoView {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p>Are you sure that you want to delete the text <b>{title}</b>?</p>
+            <p>Are you sure that you want to delete the text <b>{title.to_owned()}</b>?</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
-            on:click= move |ev| {
-              // deleteText(text.id).then();
-              // setLoading(true);
-              // navigate('admin_text_index');
+            on:click= move |_ev| {
+              server_action.dispatch(Delete {id});
+              navigate("/texts", Default::default());
             }>
               Delete text
             </button>
@@ -47,17 +48,19 @@ fn create_modal(title: String) -> impl IntoView {
 }
 
 fn create_view(text: &Option<Text>) -> impl IntoView {
+    let mut id: Option<Uuid> = None;
     let mut title = String::new();
+    let mut title_modal = String::new();
     let mut content = String::new();
     let (published, set_published) = signal("false");
-    let mut new_entry = true;
 
     if let Some(text) = text {
         let text = text.clone();
+        id = Some(text.id);
         title = text.title.clone();
+        title_modal = text.title.clone();
         content = text.content.clone();
         set_published.set(if text.published { "true" } else { "false" });
-        new_entry = false;
     }
 
     let (has_error_title, set_error_title) = signal(false);
@@ -127,7 +130,7 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         </div>
 
         <Show
-          when=move || !new_entry
+          when=move || id.is_some()
           fallback=|| ().into_any()
         >
           <div class="col-12">
@@ -150,7 +153,12 @@ fn create_view(text: &Option<Text>) -> impl IntoView {
         </div>
       </ActionForm>
 
-      // {create_modal(title.get_untracked())}
+      {move ||
+        match id {
+          Some(id) => create_modal(&title_modal, id).into_any(),
+          None => ().into_any()
+        }
+      }
 
       <div>
         {move || pending().then(|| view!{<div class="alert alert-success mb-5">
